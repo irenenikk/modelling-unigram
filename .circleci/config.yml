@@ -35,11 +35,13 @@ jobs:
           paths:
             - /opt/conda
 
-      # run tests!
-      # this example uses Django's built-in test-runner
-      # other common Python testing frameworks include pytest and nose
-      # https://pytest.org
-      # https://nose.readthedocs.io
+      - run:
+          name: run linter
+          command: |
+            source /opt/conda/etc/profile.d/conda.sh
+            conda activate unigram
+            pylint src/ --rcfile .pylintrc
+
       - run:
           name: run tests
           command: |
