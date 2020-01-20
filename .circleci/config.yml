@@ -30,13 +30,14 @@ jobs:
           command: |
             ENVS=$(conda env list | awk '{print $1}' )
             if ! [[ $ENVS = *"$1"* ]]; then
+              source /opt/conda/etc/profile.d/conda.sh
+              conda update -n base -c defaults conda
               conda env create -f environment.yml
+              conda activate unigram
+              conda install pytorch torchvision cpuonly -c pytorch
             else
               echo "Conda env already installed"
             fi;
-            source /opt/conda/etc/profile.d/conda.sh
-            conda activate unigram
-            conda install pytorch torchvision cpuonly -c pytorch
 
       - save_cache:
           key: v1.0-dependencies-{{ checksum "environment.yml" }}

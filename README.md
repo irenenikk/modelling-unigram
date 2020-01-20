@@ -1,4 +1,8 @@
+
 # modelling-unigram-priv
+
+[![CircleCI](https://circleci.com/gh/tpimentelms/modelling-unigram-priv.svg?style=svg&circle-token=dd03e792e49ec51ee6d7cedb1f01e2271ca9739b)](https://circleci.com/gh/tpimentelms/modelling-unigram-priv)
+
 Modelling the unigram distribution code
 
 
