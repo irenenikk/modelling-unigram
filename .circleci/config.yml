@@ -29,6 +29,7 @@ jobs:
           name: install dependencies
           command: |
             ENVS=$(conda env list | awk '{print $1}' )
+            echo $ENVS
             if ! [[ $ENVS = *"$1"* ]]; then
               source /opt/conda/etc/profile.d/conda.sh
               conda update -n base -c defaults conda
