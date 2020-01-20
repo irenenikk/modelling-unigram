@@ -23,7 +23,7 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "environment.yml" }}
+            - v1.0-dependencies-{{ checksum "environment.yml" }}
 
       - run:
           name: install dependencies
@@ -31,7 +31,7 @@ jobs:
             conda env create -f environment.yml
 
       - save_cache:
-          key: v1-dependencies-{{ checksum "environment.yml" }}
+          key: v1.0-dependencies-{{ checksum "environment.yml" }}
           paths:
             - /opt/conda
 
