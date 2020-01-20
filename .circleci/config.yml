@@ -8,7 +8,7 @@ jobs:
     docker:
       # specify the version you desire here
       # use `-browsers` prefix for selenium tests, e.g. `3.7.6-browsers`
-      - image: continuumio/miniconda3
+      - image: continuumio/miniconda3:4.8.1
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -28,13 +28,12 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            conda update -n base -c defaults conda
             conda env create -f environment.yml
 
       - save_cache:
-          paths:
-            - ~/conda
           key: v1-dependencies-{{ checksum "environment.yml" }}
+          paths:
+            - /opt/conda
 
       # run tests!
       # this example uses Django's built-in test-runner
@@ -44,7 +43,8 @@ jobs:
       - run:
           name: run tests
           command: |
-            source activate unigram
+            source /opt/conda/etc/profile.d/conda.sh
+            conda activate unigram
             python src/test_circleci.py
 
       - store_artifacts:
