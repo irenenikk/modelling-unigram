@@ -10,19 +10,32 @@ from util import util
 
 class Alphabet:
     def __init__(self):
-        self.chars = {
+        self._chars2idx = {
             'PAD': 0,
             'SOS': 1,
             'EOS': 2
         }
+        self._idx2chars = {idx: char for char, idx in self._chars2idx.items()}
+        self._updated = True
 
     def add_word(self, word):
         for char in word:
-            if char not in self.chars:
-                self.chars[char] = len(self.chars)
+            if char not in self._chars2idx:
+                self._chars2idx[char] = len(self._chars2idx)
+                self._updated = False
+
+    def char2idx(self, word):
+        return [self._chars2idx[char] for char in word]
+
+    def idx2char(self, idx_word):
+        if not self._updated:
+            self._idx2chars = {idx: char for char, idx in self._chars2idx.items()}
+            self._updated = True
+        return [self._idx2chars[idx] for idx in idx_word]
+
 
     def __len__(self):
-        return len(self.chars)
+        return len(self._chars2idx)
 
 
 def get_args():
@@ -55,29 +68,36 @@ def get_fold_splits(n_sentences, n_folds):
     return splits
 
 
-def process_line(line, word_counts, alphabet):
+def process_line(line, word_info, alphabet):
     for word in line.strip().split(' '):
-        word_counts[word] = word_counts.get(word, 0) + 1
         alphabet.add_word(word)
+
+        if word in word_info:
+            word_info[word]['count'] += 1
+        else:
+            word_info[word] = {
+                'count': 1,
+                'idx': alphabet.char2idx(word)
+            }
 
 
 def process_data(src_fname, n_folds, splits, alphabet):
-    fold_counts = [{} for _ in range(n_folds)]
+    folds = [{} for _ in range(n_folds)]
     with open(src_fname, 'r') as f:
         for i, line in tqdm(enumerate(f.readlines()), desc='Processing wiki data',
                             total=len(splits)):
             fold = splits[i]
-            process_line(line, fold_counts[fold], alphabet)
+            process_line(line, folds[fold], alphabet)
 
-    return fold_counts
-
-
-def count_tokens(fold_counts):
-    return [sum(list(word_counts.values())) for word_counts in fold_counts]
+    return folds
 
 
-def count_types(fold_counts):
-    return [len(word_counts) for word_counts in fold_counts]
+def count_tokens(folds):
+    return [sum([x['count'] for x in word_info.values()]) for word_info in folds]
+
+
+def count_types(folds):
+    return [len(word_info) for word_info in folds]
 
 
 def process(src_fname, tgt_fname, n_folds):
@@ -86,10 +106,10 @@ def process(src_fname, tgt_fname, n_folds):
     splits = get_fold_splits(n_sentences, n_folds)
     alphabet = Alphabet()
 
-    fold_counts = process_data(src_fname, n_folds, splits, alphabet)
-    n_tokens = count_tokens(fold_counts)
-    n_types = count_types(fold_counts)
-    util.write_data(tgt_fname, (fold_counts, alphabet, n_tokens))
+    folds = process_data(src_fname, n_folds, splits, alphabet)
+    n_tokens = count_tokens(folds)
+    n_types = count_types(folds)
+    util.write_data(tgt_fname, (folds, alphabet, n_tokens))
 
     print('# unique chars:', len(alphabet))
     print('# tokens per fold:', n_tokens)
