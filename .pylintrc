@@ -14,6 +14,7 @@
 # --disable=W".
 disable=missing-function-docstring,
         missing-module-docstring,
+        missing-class-docstring,
         wrong-import-position,
         attribute-defined-outside-init
 
