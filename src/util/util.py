@@ -1,5 +1,7 @@
 import os
 import pathlib
+import io
+import csv
 import pickle
 import numpy as np
 import torch
@@ -8,6 +10,12 @@ import torch
 def config(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
+
+
+def write_csv(filename, results):
+    with io.open(filename, 'w', encoding='utf8') as f:
+        writer = csv.writer(f, delimiter=',')
+        writer.writerows(results)
 
 
 def write_data(filename, embeddings):

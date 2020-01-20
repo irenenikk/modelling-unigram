@@ -4,38 +4,10 @@ import numpy as np
 from tqdm import tqdm
 
 sys.path.append('./src/')
+from h01_data.alphabet import Alphabet
 from util import argparser
 from util import util
 
-
-class Alphabet:
-    def __init__(self):
-        self._chars2idx = {
-            'PAD': 0,
-            'SOS': 1,
-            'EOS': 2
-        }
-        self._idx2chars = {idx: char for char, idx in self._chars2idx.items()}
-        self._updated = True
-
-    def add_word(self, word):
-        for char in word:
-            if char not in self._chars2idx:
-                self._chars2idx[char] = len(self._chars2idx)
-                self._updated = False
-
-    def char2idx(self, word):
-        return [self._chars2idx[char] for char in word]
-
-    def idx2char(self, idx_word):
-        if not self._updated:
-            self._idx2chars = {idx: char for char, idx in self._chars2idx.items()}
-            self._updated = True
-        return [self._idx2chars[idx] for idx in idx_word]
-
-
-    def __len__(self):
-        return len(self._chars2idx)
 
 
 def get_args():
@@ -43,7 +15,7 @@ def get_args():
         "--wikipedia-tokenized-file", type=str,
         help="The file in which wikipedia tokenized results should be")
     argparser.add_argument(
-        "--processed-data-file", type=str,
+        "--data-file", type=str,
         help="The file in which processed data should be saved")
     argparser.add_argument(
         "--n-folds", type=int, default=10,
@@ -120,7 +92,7 @@ def main():
     args = get_args()
     logging.info(args)
 
-    process(args.wikipedia_tokenized_file, args.processed_data_file, args.n_folds)
+    process(args.wikipedia_tokenized_file, args.data_file, args.n_folds)
 
 
 if __name__ == '__main__':
