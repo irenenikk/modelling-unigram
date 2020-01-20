@@ -6,7 +6,6 @@ import spacy
 from tqdm import tqdm
 import gensim.utils
 
-
 logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s', level=logging.INFO)
 
 
