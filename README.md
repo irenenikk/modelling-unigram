@@ -1,4 +1,8 @@
+
 # modelling-unigram-priv
+
+[![CircleCI](https://circleci.com/gh/tpimentelms/modelling-unigram-priv.svg?style=svg&circle-token=dd03e792e49ec51ee6d7cedb1f01e2271ca9739b)](https://circleci.com/gh/tpimentelms/modelling-unigram-priv)
+
 Modelling the unigram distribution code
 
 
@@ -12,4 +16,5 @@ $ conda env create -f environment.yml
 And then install the appropriate version of pytorch:
 ```bash
 $ conda install pytorch torchvision cpuonly -c pytorch
+$ python -m spacy download xx_ent_wiki_sm
 ```
