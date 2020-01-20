@@ -1,5 +1,5 @@
 [MASTER]
-# init-hook='import sys; sys.path.append("./src/")'
+# init-hook="from pylint.config import find_pylintrc; import os, sys; sys.path.append(os.path.join(os.path.dirname(find_pylintrc()), 'src/'));"
 
 [MESSAGES CONTROL]
 
@@ -14,6 +14,7 @@
 # --disable=W".
 disable=missing-function-docstring,
         missing-module-docstring,
+        missing-class-docstring,
         wrong-import-position,
         attribute-defined-outside-init
 
@@ -40,7 +41,8 @@ good-names=i,
            df,
            m,
            f,
-           x
+           x,
+           parser
 
 max-args=8
 
