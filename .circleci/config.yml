@@ -28,7 +28,10 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            conda env create -f environment.yml
+            ENVS=$(conda env list | awk '{print $1}' )
+            if ! [[ $ENVS = *"$1"* ]]; then
+              conda env create -f environment.yml
+            fi;
 
       - save_cache:
           key: v1.0-dependencies-{{ checksum "environment.yml" }}
