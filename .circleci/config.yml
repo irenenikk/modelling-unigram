@@ -35,8 +35,12 @@ jobs:
               conda env create -f environment.yml
               conda activate unigram
               conda install pytorch torchvision cpuonly -c pytorch
+              python -m spacy download xx_ent_wiki_sm
             else
               echo "Conda env already installed"
+              source /opt/conda/etc/profile.d/conda.sh
+              conda activate unigram
+              python -m spacy download xx_ent_wiki_sm
             fi;
 
       - save_cache:

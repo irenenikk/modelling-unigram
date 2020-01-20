@@ -16,4 +16,5 @@ $ conda env create -f environment.yml
 And then install the appropriate version of pytorch:
 ```bash
 $ conda install pytorch torchvision cpuonly -c pytorch
+$ python -m spacy download xx_ent_wiki_sm
 ```
