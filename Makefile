@@ -13,8 +13,13 @@ TOKENIZED_FILE := $(WIKI_DIR)/parsed.txt
 PROCESSED_DATA_FILE := $(DATA_DIR_LANG)/processed.pckl
 
 
+all: get_wiki
+
 get_wiki: $(PROCESSED_DATA_FILE)
 	echo "Finished getting wikipedia data" $(LANGUAGE)
+
+clean:
+	rm $(TOKENIZED_FILE) $(PROCESSED_DATA_FILE)
 
 # Preprocess Data
 $(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)
