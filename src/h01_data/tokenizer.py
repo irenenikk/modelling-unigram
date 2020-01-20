@@ -61,10 +61,10 @@ def process_sentences(sentences, spacy_tokenizer):
     parsed_sentences = []
     for sentence in sentences:
         target_tokens = tokenize_sentence(spacy_tokenizer, sentence)
-        if len(target_tokens) > 1:
+        if len(target_tokens) > 1: # Drop sentences with only 1 token
             parsed_sentences += [' '.join(target_tokens)]
 
-    if len(parsed_sentences) <= 10:
+    if len(parsed_sentences) <= 10: # Drop article if it contains less than 10 sentences
         return None
     return ' '.join(parsed_sentences)
 
