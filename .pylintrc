@@ -42,7 +42,9 @@ good-names=i,
            m,
            f,
            x,
-           parser
+           y,
+           parser,
+           device
 
 max-args=8
 
