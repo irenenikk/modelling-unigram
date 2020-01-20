@@ -5,6 +5,7 @@ from .base import BaseLM
 
 
 class LstmLM(BaseLM):
+    # pylint: disable=arguments-differ
     name = 'lstm'
 
     def __init__(self, alphabet_size, embedding_size, hidden_size,

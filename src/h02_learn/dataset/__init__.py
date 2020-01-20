@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
 
-from .types import TypeDataset
 from util import util
+from .types import TypeDataset
 
 
 def generate_batch(batch):

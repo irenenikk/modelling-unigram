@@ -1,9 +1,6 @@
 import torch
 from torch.utils.data import Dataset
 
-from h01_data.process_data import Alphabet
-from util import util
-
 
 class TypeDataset(Dataset):
     def __init__(self, data, folds):

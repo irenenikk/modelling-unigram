@@ -6,6 +6,7 @@ from util import constants
 
 
 class BaseLM(nn.Module):
+    # pylint: disable=abstract-method
     name = 'base'
 
     def __init__(self, alphabet_size, embedding_size, hidden_size,

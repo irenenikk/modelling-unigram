@@ -131,7 +131,8 @@ def main():
     dev_loss = evaluate(devloader, model, criterion)
     test_loss = evaluate(testloader, model, criterion)
 
-    print('Final Training loss: %.4f Dev loss: %.4f Test loss: %.4f' % (train_loss, dev_loss, test_loss))
+    print('Final Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
+          (train_loss, dev_loss, test_loss))
 
     save_checkpoints(model, train_loss, dev_loss, test_loss, args.checkpoints_path)
 
