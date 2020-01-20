@@ -10,6 +10,12 @@ def config(seed):
     torch.manual_seed(seed)
 
 
+def write_csv(filename, results):
+    with io.open(filename, 'w', encoding='utf8') as f:
+        writer = csv.writer(f, delimiter=',')
+        writer.writerows(results)
+
+
 def write_data(filename, embeddings):
     with open(filename, "wb") as f:
         pickle.dump(embeddings, f)
