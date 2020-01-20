@@ -51,12 +51,13 @@ jobs:
             conda activate unigram
             pylint src/ --rcfile .pylintrc
 
-      - run:
-          name: run tests
-          command: |
-            source /opt/conda/etc/profile.d/conda.sh
-            conda activate unigram
-            python src/test_circleci.py
+      # No tests configured yet
+      # - run:
+      #     name: run tests
+      #     command: |
+      #       source /opt/conda/etc/profile.d/conda.sh
+      #       conda activate unigram
+      #       python src/test_circleci.py
 
       - store_artifacts:
           path: test-reports
