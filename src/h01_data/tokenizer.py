@@ -1,4 +1,3 @@
-# Process Wikipedia to tokens, tailored to wikipedia-extractor.py dump output
 import logging
 import json
 import argparse
