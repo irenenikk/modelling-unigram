@@ -19,12 +19,13 @@ get_wiki: $(PROCESSED_DATA_FILE)
 	echo "Finished getting wikipedia data" $(LANGUAGE)
 
 clean:
-	rm $(TOKENIZED_FILE) $(PROCESSED_DATA_FILE)
+	# rm $(TOKENIZED_FILE) $(PROCESSED_DATA_FILE)
+	rm $(PROCESSED_DATA_FILE)
 
 # Preprocess Data
 $(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)
-	echo "Tokenize data"
-	python src/h01_data/preprocess_data.py --wikipedia-tokenized-file $(TOKENIZED_FILE) --processed-data-file $(PROCESSED_DATA_FILE)
+	echo "Process data"
+	python src/h01_data/process_data.py --wikipedia-tokenized-file $(TOKENIZED_FILE) --processed-data-file $(PROCESSED_DATA_FILE)
 
 # Tokenize wikipedia
 $(TOKENIZED_FILE): $(JSON_FILE)

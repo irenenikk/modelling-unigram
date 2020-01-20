@@ -1,26 +1,25 @@
 import sys
 import logging
-import argparse
 import numpy as np
 from tqdm import tqdm
 
 sys.path.append('./src/')
+from util import argparser
 from util import util
 
 
 def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
+    argparser.add_argument(
         "--wikipedia-tokenized-file", type=str,
         help="The file in which wikipedia tokenized results should be")
-    parser.add_argument(
+    argparser.add_argument(
         "--processed-data-file", type=str,
         help="The file in which processed data should be saved")
-    parser.add_argument(
+    argparser.add_argument(
         "--n-folds", type=int, default=10,
         help="Number of folds to split data")
 
-    return parser.parse_args()
+    return argparser.parse_args()
 
 
 def count_sentences(fname):
@@ -39,20 +38,28 @@ def get_fold_splits(n_sentences, n_folds):
     return splits
 
 
-def process_line(line, vocab):
+def process_line(line, word_counts):
     for word in line.strip().split(' '):
-        vocab[word] = vocab.get(word, 0) + 1
+        word_counts[word] = word_counts.get(word, 0) + 1
 
 
 def process_data(src_fname, n_folds, splits):
-    vocab_counts = [{} for _ in range(n_folds)]
+    fold_counts = [{} for _ in range(n_folds)]
     with open(src_fname, 'r') as f:
         for i, line in tqdm(enumerate(f.readlines()), desc='Processing wiki data',
                             total=len(splits)):
             fold = splits[i]
-            process_line(line, vocab_counts[fold])
+            process_line(line, fold_counts[fold])
 
-    return vocab_counts
+    return fold_counts
+
+
+def count_tokens(fold_counts):
+    return [sum([x for x in word_counts.values()]) for word_counts in fold_counts]
+
+
+def count_types(fold_counts):
+    return [len(word_counts) for word_counts in fold_counts]
 
 
 def process(src_fname, tgt_fname, n_folds):
@@ -60,8 +67,13 @@ def process(src_fname, tgt_fname, n_folds):
     n_sentences = count_sentences(src_fname)
     splits = get_fold_splits(n_sentences, n_folds)
 
-    vocab_counts = process_data(src_fname, n_folds, splits)
-    util.write_data(tgt_fname, vocab_counts)
+    fold_counts = process_data(src_fname, n_folds, splits)
+    n_tokens = count_tokens(fold_counts)
+    n_types = count_types(fold_counts)
+    util.write_data(tgt_fname, (fold_counts, n_tokens))
+
+    print('# tokens per fold:', n_tokens)
+    print('# types per fold:', n_types)
 
 
 def main():
