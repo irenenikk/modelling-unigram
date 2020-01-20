@@ -24,12 +24,11 @@ jobs:
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "environment.yml" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
 
       - run:
           name: install dependencies
           command: |
+            conda update -n base -c defaults conda
             conda env create -f environment.yml
 
       - save_cache:
@@ -45,7 +44,7 @@ jobs:
       - run:
           name: run tests
           command: |
-            conda activate unigram
+            source activate unigram
             python src/test_circleci.py
 
       - store_artifacts:
