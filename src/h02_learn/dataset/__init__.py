@@ -1,3 +1,4 @@
+import torch
 from torch.utils.data import DataLoader
 
 from util import util
@@ -18,19 +19,25 @@ def generate_batch(batch):
     in each worker.
     """
 
-    tensor = batch[0]
+    tensor = batch[0][0]
     batch_size = len(batch)
-    max_length = max([len(entry) for entry in batch]) - 1  # Does not need to predict SOS
+    max_length = max([len(entry[0]) for entry in batch]) - 1  # Does not need to predict SOS
 
     x = tensor.new_zeros(batch_size, max_length)
     y = tensor.new_zeros(batch_size, max_length)
 
-    for i, sentence in enumerate(batch):
+    for i, item in enumerate(batch):
+        sentence = item[0]
         sent_len = len(sentence) - 1  # Does not need to predict SOS
         x[i, :sent_len] = sentence[:-1]
         y[i, :sent_len] = sentence[1:]
 
-    return x, y
+    if len(batch[0]) == 1:
+        return x, y
+
+    weights = torch.cat([entry[1] for entry in batch])
+    return x, y, weights
+
 
 
 def get_data_cls(data_type):
@@ -38,7 +45,7 @@ def get_data_cls(data_type):
         return TypeDataset
     if data_type == 'tokens':
         return TokenDataset
-    ValueError('Invalid data requested %s' % data_type)
+    raise ValueError('Invalid data requested %s' % data_type)
 
 
 def load_data(fname):
