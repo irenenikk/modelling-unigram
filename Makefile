@@ -3,7 +3,7 @@ DATA_DIR_BASE := ./data
 DATA_DIR_LANG := $(DATA_DIR_BASE)/$(LANGUAGE)
 WIKI_DIR := $(DATA_DIR_LANG)/wiki
 CHECKPOINT_DIR_BASE := ./checkpoint
-CHECKPOINT_DIR_LANG := ./$(CHECKPOINT_DIR_BASE)/$(LANGUAGE)
+CHECKPOINT_DIR_LANG := $(CHECKPOINT_DIR_BASE)/$(LANGUAGE)
 
 XML_NAME := $(LANGUAGE)wiki-latest-pages-articles.xml.bz2
 WIKIURL := https://dumps.wikimedia.org/$(LANGUAGE)wiki/latest/$(XML_NAME)
@@ -14,13 +14,15 @@ JSON_FILE := $(WIKI_DIR)/$(JSON_NAME)
 TOKENIZED_FILE := $(WIKI_DIR)/parsed.txt
 PROCESSED_DATA_FILE := $(DATA_DIR_LANG)/processed.pckl
 
-CHECKPOINT_PATH := $(CHECKPOINT_DIR_LANG)/baseline
-CHECKPOINT_FILE := $(CHECKPOINT_PATH)/results.csv
+CHECKPOINT_TYPE_PATH := $(CHECKPOINT_DIR_LANG)/types
+CHECKPOINT_TYPE_FILE := $(CHECKPOINT_TYPE_PATH)/results.csv
+CHECKPOINT_TOKEN_PATH := $(CHECKPOINT_DIR_LANG)/tokens
+CHECKPOINT_TOKEN_FILE := $(CHECKPOINT_TOKEN_PATH)/results.csv
 
 
 all: get_wiki
 
-train: $(CHECKPOINT_FILE)
+train: $(CHECKPOINT_TOKEN_FILE)
 	echo "Finished training model" $(LANGUAGE)
 
 get_wiki: $(PROCESSED_DATA_FILE)
@@ -30,11 +32,17 @@ clean:
 	# rm $(TOKENIZED_FILE) $(PROCESSED_DATA_FILE)
 	rm $(PROCESSED_DATA_FILE)
 
-# Train Model
-$(CHECKPOINT_FILE): $(PROCESSED_DATA_FILE)
-	echo "Train model" $(CHECKPOINT_FILE)
-	mkdir -p $(CHECKPOINT_PATH)
-	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_PATH)
+# Train tokens Model
+$(CHECKPOINT_TOKEN_FILE): $(PROCESSED_DATA_FILE)
+	echo "Train tokens model" $(CHECKPOINT_TOKEN_FILE)
+	mkdir -p $(CHECKPOINT_TOKEN_PATH)
+	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens
+
+# Train types Model
+$(CHECKPOINT_TYPE_FILE): $(PROCESSED_DATA_FILE)
+	echo "Train types model" $(CHECKPOINT_TYPE_FILE)
+	mkdir -p $(CHECKPOINT_TYPE_FILE)
+	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_TYPE_PATH) --dataset types
 
 # Preprocess Data
 $(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)

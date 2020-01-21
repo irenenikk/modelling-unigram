@@ -13,6 +13,7 @@ from util import constants
 
 def get_args():
     # Data
+    argparser.add_argument('--dataset', type=str)
     argparser.add_argument('--data-file', type=str)
     argparser.add_argument('--batch-size', type=int, default=32)
     # Model
@@ -125,7 +126,9 @@ def main():
     folds = [list(range(8)), [8], [9]]
 
     trainloader, devloader, testloader, alphabet = \
-        get_data_loaders(args.data_file, folds, args.batch_size)
+        get_data_loaders(args.dataset, args.data_file, folds, args.batch_size)
+    print('Train size: %d Dev size: %d Test size: %d' %
+          (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
     model = get_model(len(alphabet), args).to(device=constants.device)
     criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD')) \
