@@ -15,5 +15,6 @@ dependencies:
   - pylint
   - pip
   - pip:
+    - rangetree
     - seaborn
     - ipdb

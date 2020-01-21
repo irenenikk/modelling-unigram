@@ -9,7 +9,6 @@ from util import argparser
 from util import util
 
 
-
 def get_args():
     argparser.add_argument(
         "--wikipedia-tokenized-file", type=str,
@@ -49,7 +48,7 @@ def process_line(line, word_info, alphabet):
         else:
             word_info[word] = {
                 'count': 1,
-                'idx': alphabet.char2idx(word)
+                'idx': alphabet.word2idx(word)
             }
 
 

@@ -2,6 +2,7 @@ from torch.utils.data import DataLoader
 
 from util import util
 from .types import TypeDataset
+from .tokens import TokenDataset
 
 
 def generate_batch(batch):
@@ -15,17 +16,7 @@ def generate_batch(batch):
     Pay attention here and make sure that 'collate_fn' is declared
     as a top level def. This ensures that the function is available
     in each worker.
-    Output:
-        text: the text entries in the data_batch are packed into a list and
-            concatenated as a single tensor for the input of nn.EmbeddingBag.
-        offsets: the offsets is a tensor of delimiters to represent the beginning
-            index of the individual sequence in the text tensor.
-        cls: a tensor saving the labels of individual text entries.
     """
-    # text = torch.tensor([entry[0] for entry in batch])
-    # label = torch.tensor([entry[0] for entry in batch])
-    # text = [entry[0][0] for entry in batch]
-    # text.zeros_like()
 
     tensor = batch[0]
     batch_size = len(batch)
@@ -42,6 +33,14 @@ def generate_batch(batch):
     return x, y
 
 
+def get_data_cls(data_type):
+    if data_type == 'types':
+        return TypeDataset
+    if data_type == 'tokens':
+        return TokenDataset
+    ValueError('Invalid data requested %s' % data_type)
+
+
 def load_data(fname):
     return util.read_data(fname)
 
@@ -51,18 +50,18 @@ def get_alphabet(data):
     return alphabet
 
 
-def get_data_loader(fname, folds, batch_size, shuffle):
-    trainset = TypeDataset(fname, folds)
+def get_data_loader(dataset_cls, fname, folds, batch_size, shuffle):
+    trainset = dataset_cls(fname, folds)
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=shuffle,
                              collate_fn=generate_batch)
     return trainloader
 
 
-def get_data_loaders(fname, folds, batch_size):
-    # trainset = TypeDataset(fname, folds[0])
+def get_data_loaders(data_type, fname, folds, batch_size):
+    dataset_cls = get_data_cls(data_type)
     data = load_data(fname)
     alphabet = get_alphabet(data)
-    trainloader = get_data_loader(data, folds[0], batch_size=batch_size, shuffle=True)
-    devloader = get_data_loader(data, folds[1], batch_size=batch_size, shuffle=False)
-    testloader = get_data_loader(data, folds[2], batch_size=batch_size, shuffle=False)
+    trainloader = get_data_loader(dataset_cls, data, folds[0], batch_size=batch_size, shuffle=True)
+    devloader = get_data_loader(dataset_cls, data, folds[1], batch_size=batch_size, shuffle=False)
+    testloader = get_data_loader(dataset_cls, data, folds[2], batch_size=batch_size, shuffle=False)
     return trainloader, devloader, testloader, alphabet

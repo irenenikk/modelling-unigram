@@ -13,6 +13,7 @@ from util import constants
 
 def get_args():
     # Data
+    argparser.add_argument('--dataset', type=str)
     argparser.add_argument('--data-file', type=str)
     argparser.add_argument('--batch-size', type=int, default=32)
     # Model
@@ -32,6 +33,7 @@ def get_args():
 
 # np.random.choice(5, 3, p=[0.1, 0, 0.3, 0.6, 0])
 
+
 def get_model(alphabet_size, args):
     return LstmLM(
         alphabet_size, args.embedding_size, args.hidden_size,
@@ -48,9 +50,11 @@ def train_batch(x, y, model, optimizer, criterion):
 
     return loss.item()
 
+
 def _evaluate(evalloader, model, criterion):
     loss, n_instances = 0, 0
     for x, y in evalloader:
+        x, y = x.to(device=constants.device), y.to(device=constants.device)
         batch_size = x.shape[0]
         y_hat = model(x)
         loss += criterion(y_hat.reshape(-1, y_hat.shape[-1]), y.reshape(-1)) * batch_size
@@ -75,7 +79,8 @@ def print_progress(batch_id, best_batch, wait_iterations, running_loss, dev_loss
 
 
 def train(trainloader, devloader, model, criterion, eval_batches, wait_iterations):
-    optimizer = optim.AdamW(model.parameters())
+    # optimizer = optim.AdamW(model.parameters())
+    optimizer = optim.Adam(model.parameters())
     batch_id, running_loss = 0, []
     best_loss, best_batch = float('inf'), 0
 
@@ -121,10 +126,13 @@ def main():
     folds = [list(range(8)), [8], [9]]
 
     trainloader, devloader, testloader, alphabet = \
-        get_data_loaders(args.data_file, folds, args.batch_size)
+        get_data_loaders(args.dataset, args.data_file, folds, args.batch_size)
+    print('Train size: %d Dev size: %d Test size: %d' %
+          (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
     model = get_model(len(alphabet), args).to(device=constants.device)
-    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD'))
+    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD')) \
+        .to(device=constants.device)
     train(trainloader, devloader, model, criterion, args.eval_batches, args.wait_iterations)
 
     train_loss = evaluate(trainloader, model, criterion)
@@ -135,7 +143,6 @@ def main():
           (train_loss, dev_loss, test_loss))
 
     save_checkpoints(model, train_loss, dev_loss, test_loss, args.checkpoints_path)
-
 
 
 if __name__ == '__main__':
