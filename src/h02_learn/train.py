@@ -51,23 +51,29 @@ def train_batch(x, y, model, optimizer, criterion):
     return loss.item()
 
 
-def _evaluate(evalloader, model, criterion):
-    loss, n_instances = 0, 0
-    for x, y in evalloader:
+def _evaluate(evalloader, model, alphabet):
+    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD'), reduction='none') \
+        .to(device=constants.device)
+
+    dev_loss, n_instances = 0, 0
+    for x, y, weights in evalloader:
         x, y = x.to(device=constants.device), y.to(device=constants.device)
-        batch_size = x.shape[0]
         y_hat = model(x)
-        loss += criterion(y_hat.reshape(-1, y_hat.shape[-1]), y.reshape(-1)) * batch_size
-        n_instances += batch_size
+        loss = criterion(y_hat.reshape(-1, y_hat.shape[-1]), y.reshape(-1))\
+            .reshape_as(y).sum(-1)
+        dev_loss += (loss * weights).sum()
+        n_instances += weights.sum()
 
-    return loss / n_instances
+    return dev_loss / n_instances
 
 
-def evaluate(evalloader, model, criterion):
+def evaluate(evalloader, model, alphabet):
     model.eval()
+    evalloader.dataset.eval()
     with torch.no_grad():
-        result = _evaluate(evalloader, model, criterion)
+        result = _evaluate(evalloader, model, alphabet)
     model.train()
+    evalloader.dataset.train()
     return result
 
 
@@ -78,9 +84,11 @@ def print_progress(batch_id, best_batch, wait_iterations, running_loss, dev_loss
           (batch_id / 100, max_epochs / 100, avg_loss, dev_loss))
 
 
-def train(trainloader, devloader, model, criterion, eval_batches, wait_iterations):
+def train(trainloader, devloader, model, alphabet, eval_batches, wait_iterations):
     # optimizer = optim.AdamW(model.parameters())
     optimizer = optim.Adam(model.parameters())
+    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD')) \
+        .to(device=constants.device)
     batch_id, running_loss = 0, []
     best_loss, best_batch = float('inf'), 0
 
@@ -91,7 +99,7 @@ def train(trainloader, devloader, model, criterion, eval_batches, wait_iteration
             batch_id += 1
             running_loss += [loss]
             if (batch_id % eval_batches) == 0:
-                dev_loss = evaluate(devloader, model, criterion)
+                dev_loss = evaluate(devloader, model, alphabet)
 
                 if dev_loss < best_loss:
                     best_loss = dev_loss
@@ -131,13 +139,11 @@ def main():
           (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
     model = get_model(len(alphabet), args).to(device=constants.device)
-    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD')) \
-        .to(device=constants.device)
-    train(trainloader, devloader, model, criterion, args.eval_batches, args.wait_iterations)
+    train(trainloader, devloader, model, alphabet, args.eval_batches, args.wait_iterations)
 
-    train_loss = evaluate(trainloader, model, criterion)
-    dev_loss = evaluate(devloader, model, criterion)
-    test_loss = evaluate(testloader, model, criterion)
+    train_loss = evaluate(trainloader, model, alphabet)
+    dev_loss = evaluate(devloader, model, alphabet)
+    test_loss = evaluate(testloader, model, alphabet)
 
     print('Final Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
           (train_loss, dev_loss, test_loss))
