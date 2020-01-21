@@ -128,7 +128,8 @@ def main():
         get_data_loaders(args.data_file, folds, args.batch_size)
 
     model = get_model(len(alphabet), args).to(device=constants.device)
-    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD')).to(device=constants.device)
+    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD')) \
+        .to(device=constants.device)
     train(trainloader, devloader, model, criterion, args.eval_batches, args.wait_iterations)
 
     train_loss = evaluate(trainloader, model, criterion)
@@ -139,7 +140,6 @@ def main():
           (train_loss, dev_loss, test_loss))
 
     save_checkpoints(model, train_loss, dev_loss, test_loss, args.checkpoints_path)
-
 
 
 if __name__ == '__main__':

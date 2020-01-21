@@ -59,7 +59,6 @@ def get_data_loader(fname, folds, batch_size, shuffle):
 
 
 def get_data_loaders(fname, folds, batch_size):
-    # trainset = TypeDataset(fname, folds[0])
     data = load_data(fname)
     alphabet = get_alphabet(data)
     trainloader = get_data_loader(data, folds[0], batch_size=batch_size, shuffle=True)
