@@ -20,12 +20,12 @@ CHECKPOINT_TYPE_PATH := $(CHECKPOINT_DIR_LANG)/types
 CHECKPOINT_TYPE_FILE := $(CHECKPOINT_TYPE_PATH)/model.tch
 CHECKPOINT_TOKEN_PATH := $(CHECKPOINT_DIR_LANG)/tokens
 CHECKPOINT_TOKEN_FILE := $(CHECKPOINT_TOKEN_PATH)/model.tch
-RESULTS_TOKEN_FILE := $(RESULTS_DIR_LANG)/results.csv
+RESULTS_FILE := $(RESULTS_DIR_LANG)/results.csv
 
 
 all: get_wiki
 
-eval: $(RESULTS_TOKEN_FILE)
+eval: $(RESULTS_FILE)
 	echo "Finished evaluating model" $(LANGUAGE)
 
 train: $(CHECKPOINT_TOKEN_FILE)
@@ -38,11 +38,11 @@ clean:
 	# rm $(TOKENIZED_FILE) $(PROCESSED_DATA_FILE)
 	rm $(PROCESSED_DATA_FILE)
 
-# Eval tokens Model
-$(RESULTS_TOKEN_FILE): $(CHECKPOINT_TOKEN_FILE)
-	echo "Eval tokens model" $(RESULTS_TOKEN_FILE)
+# Eval language models
+$(RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
+	echo "Eval models" $(RESULTS_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h03_eval/eval.py --data-file $(PROCESSED_DATA_FILE) --model-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens
+	python src/h03_eval/eval.py --data-file $(PROCESSED_DATA_FILE) --eval-path $(CHECKPOINT_DIR_LANG) --results-file $(RESULTS_FILE) --dataset tokens
 
 # Train tokens Model
 $(CHECKPOINT_TOKEN_FILE): $(PROCESSED_DATA_FILE)

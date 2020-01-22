@@ -50,5 +50,12 @@ def get_filenames(filepath):
     return sorted(filenames)
 
 
+def get_dirs(filepath):
+    filenames = [os.path.join(filepath, f)
+                 for f in os.listdir(filepath)
+                 if os.path.isdir(os.path.join(filepath, f))]
+    return sorted(filenames)
+
+
 def mkdir(folder):
     pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
