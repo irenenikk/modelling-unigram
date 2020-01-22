@@ -66,7 +66,7 @@ def _evaluate(evalloader, model, alphabet):
         dev_loss += (loss * weights).sum()
         n_instances += weights.sum()
 
-    return dev_loss / n_instances
+    return (dev_loss / n_instances).item()
 
 
 def evaluate(evalloader, model, alphabet):
