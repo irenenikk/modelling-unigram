@@ -15,5 +15,5 @@ class TypeDataset(BaseDataset):
 
     def process_eval(self, data):
         self.word_eval = self.word_train
-        self.weights = [1] * len(self.word_eval)
+        self.weights = [torch.Tensor([1])] * len(self.word_eval)
         self.eval_instances = len(self.word_eval)
