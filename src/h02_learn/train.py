@@ -12,7 +12,6 @@ from util import util
 from util import constants
 
 
-
 def get_args():
     # Data
     argparser.add_argument('--dataset', type=str)
@@ -39,7 +38,8 @@ def get_args():
 def get_model(alphabet_size, args):
     return LstmLM(
         alphabet_size, args.embedding_size, args.hidden_size,
-        nlayers=args.nlayers, dropout=args.dropout)
+        nlayers=args.nlayers, dropout=args.dropout) \
+        .to(device=constants.device)
 
 
 def train_batch(x, y, model, optimizer, criterion):
@@ -128,7 +128,7 @@ def main():
     print('Train size: %d Dev size: %d Test size: %d' %
           (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
-    model = get_model(len(alphabet), args).to(device=constants.device)
+    model = get_model(len(alphabet), args)
     train(trainloader, devloader, model, alphabet, args.eval_batches, args.wait_iterations)
 
     train_loss = evaluate(trainloader, model, alphabet)
