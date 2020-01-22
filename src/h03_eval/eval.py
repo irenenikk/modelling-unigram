@@ -54,14 +54,12 @@ def main():
     folds = [list(range(8)), [8], [9]]
     datasets = ['types', 'tokens']
 
+    model_paths = util.get_dirs(args.eval_path)
+
     dataloaders = {
         dataset: get_data_loaders(dataset, args.data_file, folds, args.batch_size)
         for dataset in datasets
     }
-    model_paths = util.get_dirs(args.eval_path)
-    # model = load_model(args.model_path)
-    # print(util.get_dirs(args.eval_path))
-    # sys.exit()
     for dataset, dataloader in dataloaders.items():
         trainloader, devloader, testloader, _ = dataloader
         print('Dataset: %s Train size: %d Dev size: %d Test size: %d' %
@@ -69,7 +67,6 @@ def main():
 
     results = eval_all(model_paths, dataloaders)
     util.write_csv(args.results_file, results)
-    # save_checkpoints(model, train_loss, dev_loss, test_loss, args.checkpoints_path)
 
 
 if __name__ == '__main__':
