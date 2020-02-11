@@ -53,7 +53,7 @@ $(CHECKPOINT_TOKEN_FILE): $(PROCESSED_DATA_FILE)
 # Train types Model
 $(CHECKPOINT_TYPE_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train types model" $(CHECKPOINT_TYPE_FILE)
-	mkdir -p $(CHECKPOINT_TYPE_FILE)
+	mkdir -p $(CHECKPOINT_TYPE_PATH)
 	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_TYPE_PATH) --dataset types
 
 # Preprocess Data

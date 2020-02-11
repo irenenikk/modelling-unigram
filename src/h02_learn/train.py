@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 sys.path.append('./src/')
-from h02_learn.dataset import get_data_loaders
+from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.model import LstmLM
 from h02_learn.train_info import TrainInfo
 from util import argparser
@@ -124,7 +124,7 @@ def main():
     folds = [list(range(8)), [8], [9]]
 
     trainloader, devloader, testloader, alphabet = \
-        get_data_loaders(args.dataset, args.data_file, folds, args.batch_size)
+        get_data_loaders_with_folds(args.dataset, args.data_file, folds, args.batch_size)
     print('Train size: %d Dev size: %d Test size: %d' %
           (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 

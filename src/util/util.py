@@ -59,3 +59,13 @@ def get_dirs(filepath):
 
 def mkdir(folder):
     pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
+
+def hacked_exp(x):
+    # the exp normalise trick to avoid over/underflowing:
+    # https://timvieira.github.io/blog/post/2014/02/11/exp-normalize-trick/
+    #print('x', x)
+    b = max(x)
+    #print('b', b)
+    #print('x-b', x-b)
+    y = np.exp(x - b)
+    return y / y.sum()

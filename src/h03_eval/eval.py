@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append('./src/')
-from h02_learn.dataset import get_data_loaders
+from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.model import LstmLM
 from h02_learn.train import evaluate
 from util import argparser
@@ -52,12 +52,12 @@ def eval_all(model_paths, dataloaders):
 def main():
     args = get_args()
     folds = [list(range(8)), [8], [9]]
-    datasets = ['types', 'tokens']
+    datasets = ['types']
 
     model_paths = util.get_dirs(args.eval_path)
 
     dataloaders = {
-        dataset: get_data_loaders(dataset, args.data_file, folds, args.batch_size)
+        dataset: get_data_loaders_with_folds(dataset, args.data_file, folds, args.batch_size)
         for dataset in datasets
     }
     for dataset, dataloader in dataloaders.items():

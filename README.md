@@ -18,3 +18,13 @@ And then install the appropriate version of pytorch:
 $ conda install pytorch torchvision cpuonly -c pytorch
 $ python -m spacy download xx_ent_wiki_sm
 ```
+
+## Running the code
+
+The code can be run using the command `make`. The language to use is defined in the `Makefile`.
+
+`get_wiki`: Download and preprocess wikipedia data.
+
+`train`: Train the model.
+
+`eval`: Train using both types and tokens and evaluate the models on the test set. Writes results to the results folder.

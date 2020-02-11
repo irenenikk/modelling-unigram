@@ -56,19 +56,28 @@ def get_alphabet(data):
     _, alphabet, _ = data
     return alphabet
 
+def get_data_loader(data_file, data_type, batch_size, shuffle=False):
+    dataset_cls = get_data_cls(data_type)
+    data = load_data(data_file)
+    # the fold doesn't matter here
+    dataset = dataset_cls(data, range(10))
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
+                             collate_fn=generate_batch)
+    return dataloader
 
-def get_data_loader(dataset_cls, fname, folds, batch_size, shuffle):
-    trainset = dataset_cls(fname, folds)
+
+def get_data_loader_with_folds(dataset_cls, data, folds, batch_size, shuffle):
+    trainset = dataset_cls(data, folds)
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=shuffle,
                              collate_fn=generate_batch)
     return trainloader
 
 
-def get_data_loaders(data_type, fname, folds, batch_size):
+def get_data_loaders_with_folds(data_type, fname, folds, batch_size):
     dataset_cls = get_data_cls(data_type)
     data = load_data(fname)
     alphabet = get_alphabet(data)
-    trainloader = get_data_loader(dataset_cls, data, folds[0], batch_size=batch_size, shuffle=True)
-    devloader = get_data_loader(dataset_cls, data, folds[1], batch_size=batch_size, shuffle=False)
-    testloader = get_data_loader(dataset_cls, data, folds[2], batch_size=batch_size, shuffle=False)
+    trainloader = get_data_loader_with_folds(dataset_cls, data, folds[0], batch_size=batch_size, shuffle=True)
+    devloader = get_data_loader_with_folds(dataset_cls, data, folds[1], batch_size=batch_size, shuffle=False)
+    testloader = get_data_loader_with_folds(dataset_cls, data, folds[2], batch_size=batch_size, shuffle=False)
     return trainloader, devloader, testloader, alphabet
