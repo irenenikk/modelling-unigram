@@ -43,7 +43,9 @@ class LstmLM(BaseLM):
         # probs is shaped (batch_size, word_length, n_characters)
         probs = F.softmax(logits, dim=2)
         mask = np.zeros(y.shape, dtype=bool)
-        mask[(y == self.ignore_index)] = True
+        # y is used as a numpy array as BooleanTensor 
+        # evaluates to ints when it's just one item
+        mask[(y.detach().numpy() == self.ignore_index)] = True
         expanded_mask = np.broadcast_to(mask.T, (1, y.shape[0], y.shape[1], probs.shape[2]))
         probs[expanded_mask] = 1
         # calculate the total probability from predictions

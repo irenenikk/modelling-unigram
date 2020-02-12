@@ -57,7 +57,7 @@ def main():
 
     model = get_model(alphabet, args)
     token_data, _, _ = load_data(args.data_file)
-    adaptor = Adaptor(0.5, 0.5, alphabet, token_data)
+    adaptor = Adaptor(0.0001, 0.0001, alphabet, token_data)
     # load generator
     model_path = os.path.join(args.checkpoints_path)
     LstmLM.load(model_path)

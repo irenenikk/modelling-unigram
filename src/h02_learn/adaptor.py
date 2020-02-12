@@ -31,7 +31,7 @@ class Adaptor:
         tokens = []
         for fold in token_dataset:
             for word, info in fold.items():
-                tokens += [word.lower()] * info['count']
+                tokens += [word] * info['count']
         random.shuffle(tokens)
         tokens_with_id = [(token, i) for i, token in enumerate(tokens)]
         return tokens_with_id
@@ -73,8 +73,6 @@ class Adaptor:
         return log_probs
 
     def fit(self, generator):
-        # TODO: what happens the first round
-        # required: tokens
         for token, token_id in self.tokens:
             print('token id', token_id)
             print('token', token)
@@ -97,7 +95,7 @@ class Adaptor:
             token_logprob = self.get_generator_word_probability(generator, token)
             #print('token logprob', token_logprob)
             #print('self.total_tables + self.b', self.total_tables + self.b)
-            new_table_prob = torch.log(torch.Tensor([self.total_tables + self.b])) + token_logprob
+            new_table_prob = torch.log(torch.Tensor([self.total_tables*self.a + self.b])) + token_logprob
             #print('new table probability', new_table_prob)
             table_probs.append((new_table_prob.squeeze().detach().numpy(), -1))
             # normalise to probabilities before sampling
@@ -105,6 +103,8 @@ class Adaptor:
             normaliser = sum(exp_probs)
             table_probs = [(prob/normaliser, table_probs[i][1]) for i, prob in enumerate(exp_probs)]
             print('table probabilities', table_probs)
+            if token.strip() == '' and len(table_probs) > 2:
+                import ipdb; ipdb.set_trace()
             assigned_table_id = self._sample_new_table_assignment(table_probs)
             # put customer to new table
             self.customers_per_table[assigned_table_id] += 1
@@ -112,5 +112,3 @@ class Adaptor:
             self.tables_with_word_label[token].add(assigned_table_id)
             print('tables with word label', self.tables_with_word_label[token])
             self.table_assignments[token_id] = assigned_table_id
-            if token_id % 5 == 0:
-                import ipdb; ipdb.set_trace()
