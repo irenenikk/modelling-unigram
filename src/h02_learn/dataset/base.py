@@ -22,8 +22,8 @@ class BaseDataset(Dataset, ABC):
 
     def get_word_idx(self, word):
         return [self.alphabet.char2idx('SOS')] + \
-            self.alphabet.word2idx(word) + \
-            [self.alphabet.char2idx('EOS')]
+                self.alphabet.word2idx(word) + \
+                [self.alphabet.char2idx('EOS')]
 
     def __len__(self):
         if self._train:
@@ -32,7 +32,7 @@ class BaseDataset(Dataset, ABC):
 
     def __getitem__(self, index):
         if self._train:
-            return (self.word_train[index],)
+            return (self.word_train[index], None, index)
         return (self.word_eval[index], self.weights[index])
 
     def train(self):

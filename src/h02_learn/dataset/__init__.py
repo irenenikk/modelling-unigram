@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
-
+from torch.utils.data.sampler import SubsetRandomSampler
+import numpy as np
 from util import util
 from .types import TypeDataset
 from .tokens import TokenDataset
@@ -13,12 +14,11 @@ def generate_batch(batch):
     which are compatible with EmbeddingBag. The function is passed
     to 'collate_fn' in torch.utils.data.DataLoader. The input to
     'collate_fn' is a list of tensors with the size of batch_size,
-    and the 'collate_fn' function packs them into a mini-batch.[len(entry[0][0]) for entry in batch]
+    and the 'collate_fn' function packs them into a mini-batch.
     Pay attention here and make sure that 'collate_fn' is declared
     as a top level def. This ensures that the function is available
     in each worker.
     """
-
     tensor = batch[0][0]
     batch_size = len(batch)
     max_length = max([len(entry[0]) for entry in batch]) - 1  # Does not need to predict SOS
@@ -32,8 +32,9 @@ def generate_batch(batch):
         x[i, :sent_len] = sentence[:-1]
         y[i, :sent_len] = sentence[1:]
 
-    if len(batch[0]) == 1:
-        return x, y
+    if len(batch[0]) == 3:
+        # return the index in training
+        return x, y, torch.Tensor([b[2] for b in batch])
 
     weights = torch.cat([entry[1] for entry in batch])
     return x, y, weights
@@ -56,13 +57,16 @@ def get_alphabet(data):
     _, alphabet, _ = data
     return alphabet
 
-def get_data_loader(data_file, data_type, batch_size, shuffle=False):
+def get_data_loader(data_file, data_type, batch_size, subset_size=None):
     dataset_cls = get_data_cls(data_type)
     data = load_data(data_file)
     # the fold doesn't matter here
     dataset = dataset_cls(data, range(10))
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
-                             collate_fn=generate_batch)
+    # this allows only using a subset of the dataset in development
+    indice_amount = subset_size if subset_size is not None else len(dataset)
+    subset_indices = np.random.choice(len(dataset), indice_amount, replace=False)
+    dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=generate_batch, 
+                            sampler=SubsetRandomSampler(subset_indices))
     return dataloader
 
 

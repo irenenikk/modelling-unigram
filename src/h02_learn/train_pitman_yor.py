@@ -9,6 +9,7 @@ from h02_learn.dataset import get_data_loaders_with_folds, load_data
 from h02_learn.model import LstmLM
 from h02_learn.train_info import TrainInfo
 from h02_learn.train import get_args, train_batch, train, save_checkpoints, save_results, evaluate
+from h02_learn.dataset import get_data_loader
 from util import argparser
 from util import util
 from util import constants
@@ -20,31 +21,13 @@ def get_model(alphabet, args):
         nlayers=args.nlayers, dropout=args.dropout, ignore_index=alphabet.char2idx('PAD')) \
         .to(device=constants.device)
 
-
-def train(trainloader, devloader, model, alphabet, eval_batches, wait_iterations):
-    # optimizer = optim.AdamW(model.parameters())
-    optimizer = optim.Adam(model.parameters())
-    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD')) \
-        .to(device=constants.device)
-    train_info = TrainInfo(wait_iterations, eval_batches)
-
-    while not train_info.finish:
-        for x, y in trainloader:
-            loss = train_batch(x, y, model, optimizer, criterion)
-            train_info.new_batch(loss)
-
-            if train_info.eval:
-                dev_loss = evaluate(devloader, model, alphabet)
-
-                if train_info.is_best(dev_loss):
-                    model.set_best()
-                elif train_info.finish:
-                    break
-
-                train_info.print_progress(dev_loss)
-
-    model.recover_best()
-
+def adaptor_loss(dataloader, generator, adaptor, alphabet):
+    entropy = 0
+    for x, y, weights in dataloader:
+        word = ''.join(alphabet.idx2word(x))
+        word_prob = adaptor.get_token_probability(generator, word)
+        entropy += word_prob * np.log(word_prob)
+    return entropy
 
 def main():
     args = get_args()
@@ -56,8 +39,10 @@ def main():
           (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
     model = get_model(alphabet, args)
-    token_data, _, _ = load_data(args.data_file)
-    adaptor = Adaptor(0.0001, 0.0001, alphabet, token_data)
+    token_data_loader = get_data_loader(args.data_file, 'tokens', 1, subset_size=10000)
+    a = 1
+    b = 1
+    adaptor = Adaptor(a, b, alphabet, token_data_loader)
     # load generator
     model_path = os.path.join(args.checkpoints_path)
     LstmLM.load(model_path)
@@ -66,9 +51,13 @@ def main():
     # train adaptor
     adaptor.fit(model)
 
-    #train_loss = evaluate(trainloader, model, alphabet)
-    #dev_loss = evaluate(devloader, model, alphabet)
-    #test_loss = evaluate(testloader, model, alphabet)
+    generator_train_loss = evaluate(trainloader, model, alphabet)
+    generator_dev_loss = evaluate(devloader, model, alphabet)
+    generator_test_loss = evaluate(testloader, model, alphabet)
+
+    adaptor_train_loss = adaptor_loss(trainloader, model, adaptor, alphabet)
+    adaptor_dev_loss = adaptor_loss(devloader, model, adaptor, alphabet)
+    adaptor_test_loss = adaptor_loss(testloader, model, adaptor, alphabet)
 
     print('Final Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
           (train_loss, dev_loss, test_loss))
