@@ -32,8 +32,6 @@ def get_args():
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
 
-# np.random.choice(5, 3, p=[0.1, 0, 0.3, 0.6, 0])
-
 
 def get_model(alphabet_size, args):
     return LstmLM(

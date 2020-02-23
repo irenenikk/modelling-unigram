@@ -46,8 +46,7 @@ class LstmLM(BaseLM):
         # y is used as a numpy array as BooleanTensor 
         # evaluates to ints when it's just one item
         mask[(y.detach().numpy() == self.ignore_index)] = True
-        expanded_mask = np.broadcast_to(mask.T, (1, y.shape[0], y.shape[1], probs.shape[2]))
-        probs[expanded_mask] = 1
+        probs[mask] = 1
         # calculate the total probability from predictions
         # probs.gather is shaped (batch_size, word_length)
         # probs.gather.prod is shaped (batch_size)

@@ -24,9 +24,9 @@ class Adaptor:
         self.total_tables = 0
         self.a = a
         self.b = b
-        self.tokens = dataloader
+        self.token_dataloader = dataloader
         self.alphabet = alphabet
-        print('Token data length', len(self.tokens))
+        print('Token data length', len(self.token_dataloader))
 
     def _sample_new_table_assignment(self, table_probs):
         ids = [idd for prob, idd in table_probs]
@@ -41,15 +41,26 @@ class Adaptor:
             return self.max_table_index
         return table_index
 
-    def get_token_probability(self, generator, token):
-        generator_prob = self.generator_word_probability(generator, token)
-        customers_in_tables_with_label = sum([self.customers_per_table[table] for table_id in self.tables_with_word_label[token]])
-        i = len(self.tokens)
-        return (customers_in_tables_with_label - self.tables_with_word_label[token]*self.a \
-                + (self.total_tables*self.a + self.b)*generator_prob)/(i+b)
+    def calculate_cross_entropy(dataloader, generator):
+        entropy = 0
+        for x, y, weights in dataloader:
+            # TODO: optimise
+            for i, word_indices in enumerate(x):
+                word = ''.join(self.alphabet.idx2word(word_indices))
+                word_logprob = self.get_token_probability(generator, word)
+                entropy += -word_logprob * weights[i]
+        return entropy / len(dataloader.dataset)
 
-    def get_generator_word_probability(self, generator, word):
-        word_char_indices = self.tokens.dataset.get_word_idx(word)
+
+    def get_token_probability(self, generator, token):
+        generator_prob = self.get_generator_word_probability(generator, token)
+        customers_in_tables_with_label = sum([self.customers_per_table[table] for table_id in self.tables_with_word_label[token]])
+        i = len(self.token_dataloader)
+        return (customers_in_tables_with_label - len(self.tables_with_word_label[token])*self.a \
+                + (self.total_tables*self.a + self.b)*generator_prob)/(i+self.b)
+
+    def get_generator_word_probability(self, generator, batch):
+        word_char_indices = [self.token_dataloader.dataset.get_word_idx(word) for word in batch]
         x = word_char_indices[:-1]
         y = word_char_indices[1:]
         x_batch = torch.LongTensor([x])
@@ -59,44 +70,46 @@ class Adaptor:
         return log_probs
 
     def fit(self, generator):
-        #for token_indices, _, token_id in tqdm(self.tokens, total=len(self.tokens), desc='Fitting adaptor', mininterval=.2):
-        for token_indices, _, token_id in self.tokens:
-            token_id = token_id.item()
-            token_indices = token_indices[0][1:]
-            token = ''.join(self.alphabet.idx2word(token_indices))
-            #print('token id', token_id)
-            #print('token', token)
-            if token_id in self.table_assignments:
-                token_table_id = self.table_assignments[token_id]
-                # remove customer from table
-                self.customers_per_table[token_table_id] -= 1
-                # if table is empty then don't associate with word anymore
-                if self.customers_per_table[token_table_id] == 0:
-                    #print('Table removed since zero customers')
-                    self.tables_with_word_label[token].remove(self.table_assignments[token_id])
-                    self.total_tables -= 1
-            table_probs = []
-            # calculate probability of assigning to old table
-            for table_id in self.tables_with_word_label[token]:
-                #print('self.customers_per_table', table_id, ':', self.customers_per_table[table_id])
-                table_prob = np.log(self.customers_per_table[table_id] - self.a)
-                table_probs.append((table_prob, table_id))
-            # calculate probability of assigning to new table
-            token_logprob = self.get_generator_word_probability(generator, token)
-            #print('token logprob', token_logprob)
-            #print('self.total_tables + self.b', self.total_tables + self.b)
-            new_table_prob = torch.log(torch.Tensor([self.total_tables*self.a + self.b])) + token_logprob
-            #print('new table probability', new_table_prob)
-            table_probs.append((new_table_prob.squeeze().detach().numpy(), -1))
-            # normalise to probabilities before sampling
-            exp_probs = hacked_exp([prob for prob, idd in table_probs])
-            normaliser = sum(exp_probs)
-            table_probs = [(prob/normaliser, table_probs[i][1]) for i, prob in enumerate(exp_probs)]
-            #print('table probabilities', table_probs)
-            assigned_table_id = self._sample_new_table_assignment(table_probs)
-            # put customer to new table
-            self.customers_per_table[assigned_table_id] += 1
-            # store info about amount of labels
-            self.tables_with_word_label[token].add(assigned_table_id)
-            #print('tables with word label', self.tables_with_word_label[token])
-            self.table_assignments[token_id] = assigned_table_id
+        for tokens_indices, target_indices, token_ids in tqdm(self.token_dataloader, total=len(self.token_dataloader), desc='Fitting adaptor', mininterval=.2):
+            tokens_logprobs = generator.get_word_probability(tokens_indices, target_indices)
+            # iterate through tokens in batch:
+            for i in range(len(tokens_logprobs)):
+                token_id = token_ids[i].item()
+                token_indices = tokens_indices[i][1:]
+                token = ''.join(self.alphabet.idx2word(token_indices))
+                print('token id', token_id)
+                print('token', token)
+                if token_id in self.table_assignments:
+                    token_table_id = self.table_assignments[token_id]
+                    # remove customer from table
+                    self.customers_per_table[token_table_id] -= 1
+                    # if table is empty then don't associate with word anymore
+                    if self.customers_per_table[token_table_id] == 0:
+                        #print('Table removed since zero customers')
+                        self.tables_with_word_label[token].remove(self.table_assignments[token_id])
+                        self.total_tables -= 1
+                table_probs = []
+                # calculate probability of assigning to old table
+                for table_id in self.tables_with_word_label[token]:
+                    print('self.customers_per_table', table_id, ':', self.customers_per_table[table_id])
+                    table_prob = np.log(self.customers_per_table[table_id] - self.a)
+                    table_probs.append((table_prob, table_id))
+                # calculate probability of assigning to new table
+                #print('token logprob', token_logprob)
+                #print('self.total_tables + self.b', self.total_tables + self.b)
+                new_table_prob = torch.log(torch.Tensor([self.total_tables*self.a + self.b])) + tokens_logprobs[i]
+                #print('new table probability', new_table_prob)
+                table_probs.append((new_table_prob.squeeze().detach().numpy(), -1))
+                # normalise to probabilities before sampling
+                exp_probs = hacked_exp([prob for prob, idd in table_probs])
+                normaliser = sum(exp_probs)
+                table_probs = [(prob/normaliser, table_probs[i][1]) for i, prob in enumerate(exp_probs)]
+                print('table probabilities', table_probs)
+                assigned_table_id = self._sample_new_table_assignment(table_probs)
+                # put customer to new table
+                self.customers_per_table[assigned_table_id] += 1
+                # store info about amount of labels
+                self.tables_with_word_label[token].add(assigned_table_id)
+                #print('tables with word label', self.tables_with_word_label[token])
+                self.table_assignments[token_id] = assigned_table_id
+        print('Done fitting the adaptor')

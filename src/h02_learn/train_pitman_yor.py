@@ -14,6 +14,7 @@ from util import argparser
 from util import util
 from util import constants
 from adaptor import Adaptor
+import numpy as np
 
 def get_model(alphabet, args):
     return LstmLM(
@@ -21,13 +22,14 @@ def get_model(alphabet, args):
         nlayers=args.nlayers, dropout=args.dropout, ignore_index=alphabet.char2idx('PAD')) \
         .to(device=constants.device)
 
-def adaptor_loss(dataloader, generator, adaptor, alphabet):
-    entropy = 0
-    for x, y, weights in dataloader:
-        word = ''.join(alphabet.idx2word(x))
-        word_prob = adaptor.get_token_probability(generator, word)
-        entropy += word_prob * np.log(word_prob)
-    return entropy
+def evaluate_adaptor(dataloader, generator, adaptor):
+    generator.eval()
+    #dataloader.dataset.eval()
+    with torch.no_grad():
+        cross_entropy = adaptor.calculate_cross_entropy(dataloader, generator)
+    generator.train()
+    dataloader.dataset.train()
+    return cross_entropy
 
 def main():
     args = get_args()
@@ -39,28 +41,36 @@ def main():
           (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
     model = get_model(alphabet, args)
-    token_data_loader = get_data_loader(args.data_file, 'tokens', 1, subset_size=10000)
-    a = 1
-    b = 1
-    adaptor = Adaptor(a, b, alphabet, token_data_loader)
+    a = 0.5
+    b = 0.5
+    # TODO: train inside a loop
+    adaptor = Adaptor(a, b, alphabet, trainloader)
     # load generator
+    # TODO: train the generator
     model_path = os.path.join(args.checkpoints_path)
     LstmLM.load(model_path)
-    # do we need to call this?
-    #model.eval()
+    # TODO: do we need to call this?
+    model.train()
     # train adaptor
     adaptor.fit(model)
 
+    print('Getting generator training loss')
     generator_train_loss = evaluate(trainloader, model, alphabet)
+    generator_train_loss = 0
+    print('Getting generator dev loss')
     generator_dev_loss = evaluate(devloader, model, alphabet)
+    print('Getting generator test loss')
     generator_test_loss = evaluate(testloader, model, alphabet)
 
-    adaptor_train_loss = adaptor_loss(trainloader, model, adaptor, alphabet)
-    adaptor_dev_loss = adaptor_loss(devloader, model, adaptor, alphabet)
-    adaptor_test_loss = adaptor_loss(testloader, model, adaptor, alphabet)
+    print('Generator Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
+          (generator_train_loss, generator_dev_loss, generator_test_loss))
 
-    print('Final Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
-          (train_loss, dev_loss, test_loss))
+    adaptor_train_loss = evaluate_adaptor(trainloader, model, adaptor, alphabet)
+    adaptor_dev_loss = evaluate_adaptor(devloader, model, adaptor, alphabet)
+    adaptor_test_loss = evaluate_adaptor(testloader, model, adaptor, alphabet)
+
+    print('Adaptor Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
+          (adaptor_train_loss, adaptor_dev_loss, adaptor_test_loss))
 
     save_checkpoints(model, train_loss, dev_loss, test_loss, args.checkpoints_path)
 
