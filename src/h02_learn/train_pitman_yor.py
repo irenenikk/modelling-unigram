@@ -24,7 +24,7 @@ def get_model(alphabet, args):
 
 def evaluate_adaptor(dataloader, generator, adaptor):
     generator.eval()
-    #dataloader.dataset.eval()
+    dataloader.dataset.eval()
     with torch.no_grad():
         cross_entropy = adaptor.calculate_cross_entropy(dataloader, generator)
     generator.train()
@@ -56,7 +56,6 @@ def main():
 
     print('Getting generator training loss')
     generator_train_loss = evaluate(trainloader, model, alphabet)
-    generator_train_loss = 0
     print('Getting generator dev loss')
     generator_dev_loss = evaluate(devloader, model, alphabet)
     print('Getting generator test loss')
@@ -64,10 +63,9 @@ def main():
 
     print('Generator Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
           (generator_train_loss, generator_dev_loss, generator_test_loss))
-
-    adaptor_train_loss = evaluate_adaptor(trainloader, model, adaptor, alphabet)
-    adaptor_dev_loss = evaluate_adaptor(devloader, model, adaptor, alphabet)
-    adaptor_test_loss = evaluate_adaptor(testloader, model, adaptor, alphabet)
+    adaptor_train_loss = evaluate_adaptor(trainloader, model, adaptor)
+    adaptor_dev_loss = evaluate_adaptor(devloader, model, adaptor)
+    adaptor_test_loss = evaluate_adaptor(testloader, model, adaptor)
 
     print('Adaptor Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
           (adaptor_train_loss, adaptor_dev_loss, adaptor_test_loss))

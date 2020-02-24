@@ -41,14 +41,18 @@ class Adaptor:
             return self.max_table_index
         return table_index
 
-    def calculate_cross_entropy(dataloader, generator):
+    def calculate_cross_entropy(self, dataloader, generator):
         entropy = 0
-        for x, y, weights in dataloader:
+        n = 0
+        for x, _, weights in dataloader:
             # TODO: optimise
             for i, word_indices in enumerate(x):
                 word = ''.join(self.alphabet.idx2word(word_indices))
                 word_logprob = self.get_token_probability(generator, word)
                 entropy += -word_logprob * weights[i]
+                n += 1
+                print('intermediate entropy', entropy/n)
+        print("adaptor entropy", entropy / len(dataloader.dataset))
         return entropy / len(dataloader.dataset)
 
 
@@ -59,14 +63,11 @@ class Adaptor:
         return (customers_in_tables_with_label - len(self.tables_with_word_label[token])*self.a \
                 + (self.total_tables*self.a + self.b)*generator_prob)/(i+self.b)
 
-    def get_generator_word_probability(self, generator, batch):
-        word_char_indices = [self.token_dataloader.dataset.get_word_idx(word) for word in batch]
+    def get_generator_word_probability(self, generator, word):
+        word_char_indices = self.token_dataloader.dataset.get_word_idx(word)
         x = word_char_indices[:-1]
         y = word_char_indices[1:]
-        x_batch = torch.LongTensor([x])
-        y_batch = torch.LongTensor([y])
-        log_probs = generator.get_word_probability(x_batch, y_batch)
-        #print('log probs', log_probs)
+        log_probs = generator.get_word_probability(torch.LongTensor([x]), torch.LongTensor([y]))
         return log_probs
 
     def fit(self, generator):
@@ -77,8 +78,8 @@ class Adaptor:
                 token_id = token_ids[i].item()
                 token_indices = tokens_indices[i][1:]
                 token = ''.join(self.alphabet.idx2word(token_indices))
-                print('token id', token_id)
-                print('token', token)
+                #print('token id', token_id)
+                #print('token', token)
                 if token_id in self.table_assignments:
                     token_table_id = self.table_assignments[token_id]
                     # remove customer from table
@@ -91,7 +92,7 @@ class Adaptor:
                 table_probs = []
                 # calculate probability of assigning to old table
                 for table_id in self.tables_with_word_label[token]:
-                    print('self.customers_per_table', table_id, ':', self.customers_per_table[table_id])
+                    #print('self.customers_per_table', table_id, ':', self.customers_per_table[table_id])
                     table_prob = np.log(self.customers_per_table[table_id] - self.a)
                     table_probs.append((table_prob, table_id))
                 # calculate probability of assigning to new table
@@ -104,7 +105,7 @@ class Adaptor:
                 exp_probs = hacked_exp([prob for prob, idd in table_probs])
                 normaliser = sum(exp_probs)
                 table_probs = [(prob/normaliser, table_probs[i][1]) for i, prob in enumerate(exp_probs)]
-                print('table probabilities', table_probs)
+                #print('table probabilities', table_probs)
                 assigned_table_id = self._sample_new_table_assignment(table_probs)
                 # put customer to new table
                 self.customers_per_table[assigned_table_id] += 1

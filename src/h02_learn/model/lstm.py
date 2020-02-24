@@ -42,10 +42,10 @@ class LstmLM(BaseLM):
         logits = self(x)
         # probs is shaped (batch_size, word_length, n_characters)
         probs = F.softmax(logits, dim=2)
-        mask = np.zeros(y.shape, dtype=bool)
-        # y is used as a numpy array as BooleanTensor 
+        mask = torch.zeros(y.shape, dtype=bool)
+        # y is used as a numpy array because BooleanTensor 
         # evaluates to ints when it's just one item
-        mask[(y.detach().numpy() == self.ignore_index)] = True
+        mask[(y == self.ignore_index)] = True
         probs[mask] = 1
         # calculate the total probability from predictions
         # probs.gather is shaped (batch_size, word_length)
