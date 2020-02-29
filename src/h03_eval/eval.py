@@ -52,7 +52,7 @@ def eval_all(model_paths, dataloaders):
 def main():
     args = get_args()
     folds = [list(range(8)), [8], [9]]
-    datasets = ['types']
+    datasets = ['types', 'tokens']
 
     model_paths = util.get_dirs(args.eval_path)
 

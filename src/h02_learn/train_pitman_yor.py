@@ -23,6 +23,7 @@ def get_model(alphabet, args):
         .to(device=constants.device)
 
 def evaluate_adaptor(dataloader, generator, adaptor):
+    print('Evaluating adaptor with a dataset of size', len(dataloader.dataset))
     generator.eval()
     dataloader.dataset.eval()
     with torch.no_grad():
@@ -40,7 +41,6 @@ def main():
     print('Train size: %d Dev size: %d Test size: %d' %
           (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
-    model = get_model(alphabet, args)
     a = 0.5
     b = 0.5
     # TODO: train inside a loop
@@ -48,12 +48,12 @@ def main():
     # load generator
     # TODO: train the generator
     model_path = os.path.join(args.checkpoints_path)
-    LstmLM.load(model_path)
-    # TODO: do we need to call this?
-    model.train()
+    generator = LstmLM.load(model_path)
+    generator.train()
     # train adaptor
-    adaptor.fit(model)
+    adaptor.fit(generator)
 
+    '''
     print('Getting generator training loss')
     generator_train_loss = evaluate(trainloader, model, alphabet)
     print('Getting generator dev loss')
@@ -63,6 +63,8 @@ def main():
 
     print('Generator Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
           (generator_train_loss, generator_dev_loss, generator_test_loss))
+    '''
+
     adaptor_train_loss = evaluate_adaptor(trainloader, model, adaptor)
     adaptor_dev_loss = evaluate_adaptor(devloader, model, adaptor)
     adaptor_test_loss = evaluate_adaptor(testloader, model, adaptor)
@@ -70,7 +72,7 @@ def main():
     print('Adaptor Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
           (adaptor_train_loss, adaptor_dev_loss, adaptor_test_loss))
 
-    save_checkpoints(model, train_loss, dev_loss, test_loss, args.checkpoints_path)
+    #save_checkpoints(model, train_loss, dev_loss, test_loss, args.checkpoints_path)
 
 
 if __name__ == '__main__':
