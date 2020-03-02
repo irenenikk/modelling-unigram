@@ -64,6 +64,6 @@ def hacked_exp(x):
     # the exp normalise trick to avoid over/underflowing:
     # https://timvieira.github.io/blog/post/2014/02/11/exp-normalize-trick/
     x = np.asarray(x)
-    b = x.max()
-    y = np.exp(x - b)
+    maxim = x.max()
+    y = np.exp(x - maxim)
     return y / y.sum()

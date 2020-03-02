@@ -28,3 +28,7 @@ The code can be run using the command `make`. The language to use is defined in 
 `train`: Train the model.
 
 `eval`: Train using both types and tokens and evaluate the models on the test set. Writes results to the results folder.
+
+## Contributing
+
+Please run `pylint src/ --rcfile .pylintrc` in the root folder to run the linter.

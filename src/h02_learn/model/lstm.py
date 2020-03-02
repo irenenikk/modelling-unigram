@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
 from .base import BaseLM
 
@@ -43,7 +42,7 @@ class LstmLM(BaseLM):
         # probs is shaped (batch_size, word_length, n_characters)
         probs = F.softmax(logits, dim=2)
         mask = torch.zeros(y.shape, dtype=bool)
-        # y is used as a numpy array because BooleanTensor 
+        # y is used as a numpy array because BooleanTensor
         # evaluates to ints when it's just one item
         mask[(y == self.ignore_index)] = True
         probs[mask] = 1
@@ -52,9 +51,3 @@ class LstmLM(BaseLM):
         # probs.gather.prod is shaped (batch_size)
         log_probs = torch.log(torch.gather(probs, 2, y.unsqueeze(2))).sum(-2)
         return log_probs
-
-    def get_logprobs(self, x, y):
-        # this is an unused method for now
-        criterion = nn.CrossEntropyLoss(ignore_index=self.ignore_index, reduce='none') \
-        .to(device=constants.device)
-        logprobs = criterion(logits, y)

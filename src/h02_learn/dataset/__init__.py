@@ -65,7 +65,7 @@ def get_data_loader(data_file, data_type, batch_size, subset_size=None):
     # this allows only using a subset of the dataset in development
     indice_amount = subset_size if subset_size is not None else len(dataset)
     subset_indices = np.random.choice(len(dataset), indice_amount, replace=False)
-    dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=generate_batch, 
+    dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=generate_batch,
                             sampler=SubsetRandomSampler(subset_indices))
     return dataloader
 
@@ -81,7 +81,10 @@ def get_data_loaders_with_folds(data_type, fname, folds, batch_size):
     dataset_cls = get_data_cls(data_type)
     data = load_data(fname)
     alphabet = get_alphabet(data)
-    trainloader = get_data_loader_with_folds(dataset_cls, data, folds[0], batch_size=batch_size, shuffle=True)
-    devloader = get_data_loader_with_folds(dataset_cls, data, folds[1], batch_size=batch_size, shuffle=False)
-    testloader = get_data_loader_with_folds(dataset_cls, data, folds[2], batch_size=batch_size, shuffle=False)
+    trainloader = get_data_loader_with_folds(dataset_cls, data, folds[0],\
+                                                batch_size=batch_size, shuffle=True)
+    devloader = get_data_loader_with_folds(dataset_cls, data, folds[1],\
+                                                batch_size=batch_size, shuffle=False)
+    testloader = get_data_loader_with_folds(dataset_cls, data, folds[2],\
+                                                batch_size=batch_size, shuffle=False)
     return trainloader, devloader, testloader, alphabet

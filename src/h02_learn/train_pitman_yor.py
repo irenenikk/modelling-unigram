@@ -1,20 +1,14 @@
+import os
 import sys
 import torch
-import os
-import torch.nn as nn
-import torch.optim as optim
 
 sys.path.append('./src/')
-from h02_learn.dataset import get_data_loaders_with_folds, load_data
+from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.model import LstmLM
-from h02_learn.train_info import TrainInfo
-from h02_learn.train import get_args, train_batch, train, save_checkpoints, save_results, evaluate
-from h02_learn.dataset import get_data_loader
-from util import argparser
+from h02_learn.train import get_args, evaluate
 from util import util
 from util import constants
 from adaptor import Adaptor
-import numpy as np
 
 def get_model(alphabet, args):
     return LstmLM(
@@ -32,12 +26,12 @@ def evaluate_adaptor(dataloader, generator, adaptor):
     dataloader.dataset.train()
     return cross_entropy
 
-def save_pitman_yor_results(model, a, b, train_loss, dev_loss, test_loss, results_fname):
+def save_pitman_yor_results(model, alpha, beta, train_loss, dev_loss, test_loss, results_fname):
     print('Saving to', results_fname)
     results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
-                'dropout_p', 'a', 'b', 'train_loss', 'dev_loss', 'test_loss']]
+                'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss', 'test_loss']]
     results += [[model.alphabet_size, model.embedding_size, model.hidden_size,
-                 model.nlayers, model.dropout_p, a, b,
+                 model.nlayers, model.dropout_p, alpha, beta,
                  train_loss, dev_loss, test_loss]]
     util.write_csv(results_fname, results)
 
@@ -51,12 +45,10 @@ def main():
     print('Train size: %d Dev size: %d Test size: %d' %
           (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
-    a = 0.5
-    b = 0.5
-    # TODO: train inside a loop
-    adaptor = Adaptor(a, b, alphabet, trainloader)
+    alpha = 0.5
+    beta = 0.5
+    adaptor = Adaptor(alpha, beta, alphabet, trainloader)
     # load generator
-    # TODO: train the generator
     model_path = os.path.join(args.checkpoints_path)
     generator = LstmLM.load(model_path)
     generator.train()
@@ -80,7 +72,8 @@ def main():
     print('Adaptor Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
           (adaptor_train_loss, adaptor_dev_loss, adaptor_test_loss))
 
-    save_pitman_yor_results(generator, a, b, adaptor_train_loss, adaptor_dev_loss, adaptor_test_loss, args.checkpoints_path + '/results_pitman_yor.csv')
+    save_pitman_yor_results(generator, alpha, beta, adaptor_train_loss, adaptor_dev_loss,\
+                            adaptor_test_loss, args.checkpoints_path + '/results_pitman_yor.csv')
 
 
 if __name__ == '__main__':
