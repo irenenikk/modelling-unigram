@@ -48,30 +48,34 @@ class Adaptor:
     def calculate_cross_entropy(self, dataloader, generator):
         entropy = 0
         n = 0
-        for x, y, weights in dataloader:
-            # TODO: optimise
+        self.not_found = 0
+        for x, y, weights in tqdm(dataloader, total=len(dataloader), desc='Calculating adaptor cross entropy', mininterval=.2):
             generator_logprobs = generator.get_word_probability(x, y)
             for i, log_prob in enumerate(generator_logprobs):
-                # TODO: does this work
                 # do not use the start of word index
                 token_indices = x[i][1:]
                 token = ''.join(self.alphabet.idx2word(token_indices))
                 word_logprob = self.get_token_probability(log_prob, token)
                 entropy += -word_logprob * weights[i]
                 n += weights[i]
-        print("adaptor entropy", entropy / len(dataloader.dataset))
-        return entropy / len(dataloader.dataset)
+                inter_entropy = entropy/n
+        print("adaptor entropy", entropy / n)
+        return (entropy / n).item()
 
     def get_token_probability(self, generator_logprob, token):
-        generator_prob = torch.exp(generator_logprob)
         # TODO: replace after retraining
         #i = len(self.state['dataset_length'])
         i = len(self.token_dataloader.dataset)
+        if len(self.state['tables_with_word_label'][token]) == 0 and self.state['customers_in_tables_with_label'][token] == 0:
+            # this takes care of rare words not encountered in training
+            # their probabilities are too small to take away from log space
+            return np.log(self.state['total_tables']*self.state['a'] + self.state['b']) + generator_logprob
+        generator_prob = torch.exp(generator_logprob)
         return torch.log((self.state['customers_in_tables_with_label'][token] - len(self.state['tables_with_word_label'][token])*self.state['a']) \
                 + (self.state['total_tables']*self.state['a'] + self.state['b'])*generator_prob)-torch.log(i+self.state['b'])
 
     def count_customers_in_tables_with_label(self):
-        customers_in_tables_with_label = {}
+        customers_in_tables_with_label = defaultdict(int)
         for x, y, weights in self.token_dataloader:
             for word_indices in x:
                 word = ''.join(self.alphabet.idx2word(word_indices[1:]))
@@ -87,10 +91,9 @@ class Adaptor:
         self.state['dataset_length'] = self.token_dataloader.dataset
         customers_in_tables_with_label = self.count_customers_in_tables_with_label()
         self.state['customers_in_tables_with_label'] = customers_in_tables_with_label
-        write_data(os.path.join(curr_dir, self.saved_state_file), self.state)
+        write_data(self.saved_state_file, self.state)
 
     def load_fitted_adaptor(self):
-        curr_dir = os.path.dirname(os.path.realpath(__file__))        
         print('Loading fitted adaptor from', self.saved_state_file)
         self.state = read_data(self.saved_state_file)
 

@@ -32,6 +32,16 @@ def evaluate_adaptor(dataloader, generator, adaptor):
     dataloader.dataset.train()
     return cross_entropy
 
+def save_pitman_yor_results(model, a, b, train_loss, dev_loss, test_loss, results_fname):
+    print('Saving to', results_fname)
+    results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
+                'dropout_p', 'a', 'b', 'train_loss', 'dev_loss', 'test_loss']]
+    results += [[model.alphabet_size, model.embedding_size, model.hidden_size,
+                 model.nlayers, model.dropout_p, a, b,
+                 train_loss, dev_loss, test_loss]]
+    util.write_csv(results_fname, results)
+
+
 def main():
     args = get_args()
     folds = [list(range(8)), [8], [9]]
@@ -51,28 +61,26 @@ def main():
     generator = LstmLM.load(model_path)
     generator.train()
     # train adaptor
-    adaptor.fit(generator)
+    adaptor.load_fitted_adaptor()
 
-    '''
     print('Getting generator training loss')
-    generator_train_loss = evaluate(trainloader, model, alphabet)
+    generator_train_loss = evaluate(trainloader, generator, alphabet)
     print('Getting generator dev loss')
-    generator_dev_loss = evaluate(devloader, model, alphabet)
+    generator_dev_loss = evaluate(devloader, generator, alphabet)
     print('Getting generator test loss')
-    generator_test_loss = evaluate(testloader, model, alphabet)
+    generator_test_loss = evaluate(testloader, generator, alphabet)
 
     print('Generator Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
           (generator_train_loss, generator_dev_loss, generator_test_loss))
-    '''
 
-    adaptor_train_loss = evaluate_adaptor(trainloader, model, adaptor)
-    adaptor_dev_loss = evaluate_adaptor(devloader, model, adaptor)
-    adaptor_test_loss = evaluate_adaptor(testloader, model, adaptor)
+    adaptor_train_loss = evaluate_adaptor(trainloader, generator, adaptor)
+    adaptor_dev_loss = evaluate_adaptor(devloader, generator, adaptor)
+    adaptor_test_loss = evaluate_adaptor(testloader, generator, adaptor)
 
     print('Adaptor Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
           (adaptor_train_loss, adaptor_dev_loss, adaptor_test_loss))
 
-    #save_checkpoints(model, train_loss, dev_loss, test_loss, args.checkpoints_path)
+    save_pitman_yor_results(generator, a, b, adaptor_train_loss, adaptor_dev_loss, adaptor_test_loss, args.checkpoints_path + '/results_pitman_yor.csv')
 
 
 if __name__ == '__main__':
