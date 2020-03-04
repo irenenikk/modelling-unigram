@@ -1,7 +1,7 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from util import constants
 from .base import BaseLM
 
 
@@ -36,18 +36,10 @@ class LstmLM(BaseLM):
         logits = self.out(hidden)
         return logits
 
-    def get_word_probability(self, x, y):
-        # get model predictions
+    def get_word_log_probability(self, x, y):
+        criterion = nn.CrossEntropyLoss(ignore_index=self.ignore_index,\
+                                            reduction='none').to(device=constants.device)
         logits = self(x)
-        # probs is shaped (batch_size, word_length, n_characters)
-        probs = F.softmax(logits, dim=2)
-        mask = torch.zeros(y.shape, dtype=bool)
-        # y is used as a numpy array because BooleanTensor
-        # evaluates to ints when it's just one item
-        mask[(y == self.ignore_index)] = True
-        probs[mask] = 1
-        # calculate the total probability from predictions
-        # probs.gather is shaped (batch_size, word_length)
-        # probs.gather.prod is shaped (batch_size)
-        log_probs = torch.log(torch.gather(probs, 2, y.unsqueeze(2))).sum(-2)
-        return log_probs
+        logprobs = criterion(logits.reshape(-1, logits.shape[-1]),\
+                                y.reshape(-1)).reshape_as(y).sum(-1)
+        return -logprobs

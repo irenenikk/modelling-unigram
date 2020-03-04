@@ -51,6 +51,7 @@ def main():
     # load generator
     model_path = os.path.join(args.checkpoints_path)
     generator = LstmLM.load(model_path)
+    generator.ignore_index = alphabet.char2idx('PAD')
     generator.train()
     # train adaptor
     adaptor.load_fitted_adaptor()

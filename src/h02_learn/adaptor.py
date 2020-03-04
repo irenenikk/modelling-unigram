@@ -49,7 +49,7 @@ class Adaptor:
         total_tokens = 0
         for x, y, weights in tqdm(dataloader, total=len(dataloader), \
                                     desc='Calculating adaptor cross entropy', mininterval=.2):
-            generator_logprobs = generator.get_word_probability(x, y)
+            generator_logprobs = generator.get_word_log_probability(x, y)
             for i, log_prob in enumerate(generator_logprobs):
                 # do not use the start of word index
                 token_indices = x[i][1:]
@@ -57,22 +57,27 @@ class Adaptor:
                 word_logprob = self.get_token_probability(log_prob, token)
                 entropy += -word_logprob * weights[i]
                 total_tokens += weights[i]
-        print("adaptor entropy", entropy / total_tokens)
+                #print("word entropy", -word_logprob * weights[i])
+                #print("intermediate entropy", entropy / total_tokens)
         return (entropy / total_tokens).item()
 
     def get_token_probability(self, generator_logprob, token):
-        i = self.state['dataset_length']
+        # TODO change alpha and beta after retraining
+        # TODO: replace after retraining
+        #print('a', self.alpha, 'b', self.beta)
+        i = len(self.state['dataset_length'])
         tables_with_word_label = self.state['tables_with_word_label'][token]
         customers_in_tables_with_label = self.state['customers_in_tables_with_label'][token]
         if len(tables_with_word_label) == 0 and customers_in_tables_with_label == 0:
             # this takes care of rare words not encountered in training
             # their probabilities are too small to take away from log space
-            adaptor_state = self.state['total_tables']*self.state['a'] + self.state['b']
-            return np.log(adaptor_state) + generator_logprob
+            adaptor_state = self.state['total_tables']*self.alpha + self.beta
+            return torch.log(adaptor_state) + generator_logprob - torch.log(i+self.beta)
         generator_prob = torch.exp(generator_logprob)
-        state1 = customers_in_tables_with_label - len(tables_with_word_label)*self.state['a']
-        state2 = self.state['total_tables']*self.state['a'] + self.state['b']
-        return torch.log(state1 + state2*generator_prob)-torch.log(i+self.state['b'])
+        state1 = customers_in_tables_with_label - len(tables_with_word_label)*self.alpha
+        state2 = self.state['total_tables']*self.alpha + self.beta
+        res = torch.log(state1 + state2*generator_prob)-torch.log(i+self.beta)
+        return res
 
     def count_customers_in_tables_with_label(self):
         c_in_tables_with_label = defaultdict(int)
@@ -121,7 +126,7 @@ class Adaptor:
     def fit(self, generator):
         for x, y, token_ids in tqdm(self.token_dataloader, total=len(self.token_dataloader), \
                                     desc='Fitting adaptor', mininterval=.2):
-            tokens_logprobs = generator.get_word_probability(x, y)
+            tokens_logprobs = generator.get_word_log_probability(x, y)
             # iterate through tokens in batch:
             for i, token_logprob in enumerate(tokens_logprobs):
                 token_id = token_ids[i].item()
