@@ -6,7 +6,7 @@ from tqdm import tqdm
 from util.util import hacked_exp, write_data, read_data
 
 class Adaptor:
-    def __init__(self, alpha, beta, alphabet, dataloader):
+    def __init__(self, alpha, beta, alphabet, dataloader, state_filename='saved_models/saved_adaptor_state'):
         # initialise mapping from table index to n.o. customers (c)
         # int --> int
         self.customers_per_table = defaultdict(int)
@@ -27,7 +27,6 @@ class Adaptor:
         self.token_dataloader = dataloader
         self.alphabet = alphabet
         curr_dir = os.path.dirname(os.path.realpath(__file__))
-        state_filename = 'saved_models/saved_adaptor_state'
         self.saved_state_file = os.path.join(curr_dir, state_filename)
         print('Token data length', len(self.token_dataloader))
 
@@ -63,7 +62,7 @@ class Adaptor:
 
     def get_token_probability(self, generator_logprob, token):
         # TODO change alpha and beta after retraining
-        # TODO: replace after retraining
+        # TODO: replace dataset length after retraining
         #print('a', self.alpha, 'b', self.beta)
         i = len(self.state['dataset_length'])
         tables_with_word_label = self.state['tables_with_word_label'][token]
@@ -123,32 +122,33 @@ class Adaptor:
         table_logprobs.append((new_table_prob.item(), -1))
         return table_logprobs
 
-    def fit(self, generator):
-        for x, y, token_ids in tqdm(self.token_dataloader, total=len(self.token_dataloader), \
-                                    desc='Fitting adaptor', mininterval=.2):
-            tokens_logprobs = generator.get_word_log_probability(x, y)
-            # iterate through tokens in batch:
-            for i, token_logprob in enumerate(tokens_logprobs):
-                token_id = token_ids[i].item()
-                token_indices = x[i][1:]
-                token = ''.join(self.alphabet.idx2word(token_indices))
-                if token_id in self.table_assignments:
-                    token_table_id = self.table_assignments[token_id]
-                    # remove customer from table
-                    self.customers_per_table[token_table_id] -= 1
-                    # if table is empty then don't associate with word anymore
-                    if self.customers_per_table[token_table_id] == 0:
-                        self.tables_with_word_label[token].remove(token_table_id)
-                        self.total_tables -= 1
-                table_logprobs = self._calculate_table_logprobs(token, token_logprob)
-                # normalise to probabilities before sampling
-                table_probs = self._normalise_table_probabilities(table_logprobs)
-                assigned_table_id = self._sample_new_table_assignment(table_probs)
-                # put customer to new table
-                self.customers_per_table[assigned_table_id] += 1
-                # store info about amount of labels
-                self.tables_with_word_label[token].add(assigned_table_id)
-                self.table_assignments[token_id] = assigned_table_id
+    def fit(self, generator, iterations):
+        for iteration in range(iterations):
+            for x, y, token_ids in tqdm(self.token_dataloader, total=len(self.token_dataloader), \
+                                        desc='Fitting adaptor', mininterval=.2):
+                tokens_logprobs = generator.get_word_log_probability(x, y)
+                # iterate through tokens in batch:
+                for i, token_logprob in enumerate(tokens_logprobs):
+                    token_id = token_ids[i].item()
+                    token_indices = x[i][1:]
+                    token = ''.join(self.alphabet.idx2word(token_indices))
+                    if token_id in self.table_assignments:
+                        token_table_id = self.table_assignments[token_id]
+                        # remove customer from table
+                        self.customers_per_table[token_table_id] -= 1
+                        # if table is empty then don't associate with word anymore
+                        if self.customers_per_table[token_table_id] == 0:
+                            self.tables_with_word_label[token].remove(token_table_id)
+                            self.total_tables -= 1
+                    table_logprobs = self._calculate_table_logprobs(token, token_logprob)
+                    # normalise to probabilities before sampling
+                    table_probs = self._normalise_table_probabilities(table_logprobs)
+                    assigned_table_id = self._sample_new_table_assignment(table_probs)
+                    # put customer to new table
+                    self.customers_per_table[assigned_table_id] += 1
+                    # store info about amount of labels
+                    self.tables_with_word_label[token].add(assigned_table_id)
+                    self.table_assignments[token_id] = assigned_table_id
+            print('Saving adaptor state to', self.saved_state_file)
+            self.save_fitted_adaptor()
         print('Done fitting the adaptor')
-        print('Saving adaptor state to', self.saved_state_file)
-        self.save_fitted_adaptor()
