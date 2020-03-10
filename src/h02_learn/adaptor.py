@@ -6,7 +6,9 @@ from tqdm import tqdm
 from util.util import hacked_exp, write_data, read_data
 
 class Adaptor:
-    def __init__(self, alpha, beta, alphabet, dataloader, state_filename='saved_models/saved_adaptor_state'):
+    def __init__(self, alpha, beta, alphabet, dataloader, state_filename, load_state=False):
+        curr_dir = os.path.dirname(os.path.realpath(__file__))
+        self.saved_state_file = os.path.join(curr_dir, state_filename)
         # initialise mapping from table index to n.o. customers (c)
         # int --> int
         self.customers_per_table = defaultdict(int)
@@ -24,11 +26,23 @@ class Adaptor:
         self.total_tables = 0
         self.alpha = torch.Tensor([alpha])
         self.beta = torch.Tensor([beta])
+        self.state = {}
+        if load_state:
+            self.set_adaptor_state()
         self.token_dataloader = dataloader
         self.alphabet = alphabet
-        curr_dir = os.path.dirname(os.path.realpath(__file__))
-        self.saved_state_file = os.path.join(curr_dir, state_filename)
         print('Token data length', len(self.token_dataloader))
+
+    def set_adaptor_state(self):
+        try:
+            self.load_fitted_adaptor()
+            self.tables_with_word_label = self.state['tables_with_word_label']
+            self.total_tables = self.state['total_tables']
+            self.customers_per_table = self.state['customers_per_table']
+            self.table_assignments = self.state['table_assignments']
+            self.max_table_index = self.state['max_table_index']
+        except:
+            print('Could not load adaptor state')
 
     def _sample_new_table_assignment(self, table_probs):
         ids = [idd for prob, idd in table_probs]
@@ -61,21 +75,18 @@ class Adaptor:
         return (entropy / total_tokens).item()
 
     def get_token_probability(self, generator_logprob, token):
-        # TODO change alpha and beta after retraining
-        # TODO: replace dataset length after retraining
-        #print('a', self.alpha, 'b', self.beta)
-        i = len(self.state['dataset_length'])
+        i = self.state['dataset_length']
         tables_with_word_label = self.state['tables_with_word_label'][token]
         customers_in_tables_with_label = self.state['customers_in_tables_with_label'][token]
         if len(tables_with_word_label) == 0 and customers_in_tables_with_label == 0:
             # this takes care of rare words not encountered in training
             # their probabilities are too small to take away from log space
-            adaptor_state = self.state['total_tables']*self.alpha + self.beta
-            return torch.log(adaptor_state) + generator_logprob - torch.log(i+self.beta)
+            adaptor_state = self.state['total_tables']*self.state['alpha'] + self.state['beta']
+            return torch.log(adaptor_state) + generator_logprob - torch.log(i+self.state['beta'])
         generator_prob = torch.exp(generator_logprob)
-        state1 = customers_in_tables_with_label - len(tables_with_word_label)*self.alpha
-        state2 = self.state['total_tables']*self.alpha + self.beta
-        res = torch.log(state1 + state2*generator_prob)-torch.log(i+self.beta)
+        state1 = customers_in_tables_with_label - len(tables_with_word_label)*self.state['alpha']
+        state2 = self.state['total_tables']*self.state['alpha'] + self.state['beta']
+        res = torch.log(state1 + state2*generator_prob)-torch.log(i+self.state['beta'])
         return res
 
     def count_customers_in_tables_with_label(self):
@@ -88,12 +99,14 @@ class Adaptor:
         return c_in_tables_with_label
 
     def save_fitted_adaptor(self):
-        self.state = {}
         self.state['tables_with_word_label'] = self.tables_with_word_label
         self.state['total_tables'] = self.total_tables
         self.state['alpha'] = self.alpha
         self.state['beta'] = self.beta
         self.state['dataset_length'] = len(self.token_dataloader.dataset)
+        self.state['customers_per_table'] = self.customers_per_table
+        self.state['table_assignments'] = self.table_assignments
+        self.state['max_table_index'] = self.max_table_index
         customers_in_tables_with_label = self.count_customers_in_tables_with_label()
         self.state['customers_in_tables_with_label'] = customers_in_tables_with_label
         write_data(self.saved_state_file, self.state)

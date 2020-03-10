@@ -11,6 +11,7 @@ from util import util
 from adaptor import Adaptor
 
 def get_args():
+    argparser.add_argument('--epochs', type=int, default=5)
     # Data
     argparser.add_argument('--dataset', type=str)
     argparser.add_argument('--data-file', type=str)
@@ -26,9 +27,13 @@ def get_args():
     # Save
     argparser.add_argument('--checkpoints-path', type=str)
     argparser.add_argument('--adaptor-results-file', type=str, required=True)
-    # training the generator
+    # training options
     argparser.add_argument('--train-generator', default=False, action='store_true')
-
+    # adaptor
+    argparser.add_argument('--alpha', type=float, required=True)
+    argparser.add_argument('--beta', type=float, required=True)
+    argparser.add_argument('--adaptor-iterations', type=int, required=True)
+    argparser.add_argument('--adaptor-state-file', type=str, required=True)
     args = argparser.parse_args()
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
@@ -68,7 +73,9 @@ def train_with_pitman_yor(trainloader, devloader, alphabet, args, alpha, beta, t
     generator = get_model(alphabet, args)
     if not train_generator:
         generator = load_generator(alphabet, args)
-    adaptor = Adaptor(alpha, beta, alphabet, trainloader)
+        generator_dev_loss = evaluate(devloader, generator, alphabet)
+        print('Generator dev loss', generator_dev_loss)
+    adaptor = Adaptor(alpha, beta, alphabet, trainloader, state_filename=args.adaptor_state_file)
     for i in range(total_iters):
         print('Iteration', i)
         # train generator
@@ -78,19 +85,28 @@ def train_with_pitman_yor(trainloader, devloader, alphabet, args, alpha, beta, t
         # train adaptor
         print('Training the adaptor')
         adaptor.fit(generator, iterations=adaptor_iters)
-        if i % 2:
+        print('Evaluating models')
+        if train_generator:
             generator_dev_loss = evaluate(devloader, generator, alphabet)
             print('Generator dev loss', generator_dev_loss)
-            adaptor_dev_loss = evaluate_adaptor(devloader, generator, adaptor)
-            print('Adaptor dev loss', adaptor_dev_loss)
+        adaptor_dev_loss = evaluate_adaptor(devloader, generator, adaptor)
+        print('Adaptor dev loss', adaptor_dev_loss)
     return generator, adaptor
 
 def tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas, total_iters, adaptor_iters):
+    best_loss = 1e5
+    best_params = None
     for alpha in alphas:
         for beta in betas:
             generator, adaptor = train_with_pitman_yor(trainloader, devloader, alphabet, args,\
                                                         alpha, beta, total_iters, adaptor_iters)
-
+            adaptor_dev_loss = evaluate_adaptor(devloader, generator, adaptor)
+            print('Adaptor dev loss', adaptor_dev_loss, 'with a =', alpha, ', b =', beta)
+            if adaptor_dev_loss < best_loss:
+                print('New best loss')
+                best_loss = adaptor_dev_loss
+                best_params = (alpha, beta)
+    print('Best loss', best_loss, 'obtained with (a, b) =', best_params)
 
 def main():
     args = get_args()
@@ -101,10 +117,10 @@ def main():
     print('Train size: %d Dev size: %d Test size: %d' %
           (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
-    alpha = 0.5
-    beta = 0.5
+    alpha = args.alpha
+    beta = args.beta
     generator, adaptor = train_with_pitman_yor(trainloader, devloader, alphabet, args,\
-                                                alpha, beta, 10, 10)
+                                                alpha, beta, args.epochs, args.adaptor_iterations, train_generator=args.train_generator)
 
     print('Getting generator training loss')
     generator_train_loss = evaluate(trainloader, generator, alphabet)
