@@ -100,6 +100,7 @@ def train(trainloader, devloader, model, alphabet, eval_batches, wait_iterations
                 train_info.print_progress(dev_loss)
 
     model.recover_best()
+    return loss, dev_loss
 
 
 def save_results(model, train_loss, dev_loss, test_loss, results_fname):

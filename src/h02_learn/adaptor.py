@@ -7,8 +7,7 @@ from util.util import hacked_exp, write_data, read_data
 
 class Adaptor:
     def __init__(self, alpha, beta, alphabet, dataloader, state_filename, load_state=False):
-        curr_dir = os.path.dirname(os.path.realpath(__file__))
-        self.saved_state_file = os.path.join(curr_dir, state_filename)
+        self.saved_state_file = state_filename
         # initialise mapping from table index to n.o. customers (c)
         # int --> int
         self.customers_per_table = defaultdict(int)
@@ -45,8 +44,7 @@ class Adaptor:
             print('Could not load adaptor state')
 
     def _sample_new_table_assignment(self, table_probs):
-        ids = [idd for prob, idd in table_probs]
-        probs = [prob for prob, idd in table_probs]
+        probs, ids = zip(*table_probs)
         table_index = np.random.choice(ids, 1, p=probs)[0]
         if table_index < 0:
             # choose new table index
@@ -130,9 +128,9 @@ class Adaptor:
             table_prob = torch.log(self.customers_per_table[table_id] - self.alpha)
             table_logprobs.append((table_prob.item(), table_id))
         # calculate probability of assigning to new table
-        new_table_prob = torch.log(torch.Tensor([self.total_tables*self.alpha + self.beta])) + \
+        new_table_logprob = torch.log(torch.Tensor([self.total_tables*self.alpha + self.beta])) + \
                             token_logprob
-        table_logprobs.append((new_table_prob.item(), -1))
+        table_logprobs.append((new_table_logprob.item(), -1))
         return table_logprobs
 
     def fit(self, generator, iterations):
@@ -165,3 +163,4 @@ class Adaptor:
             print('Saving adaptor state to', self.saved_state_file)
             self.save_fitted_adaptor()
         print('Done fitting the adaptor')
+        return self.tables_with_word_label

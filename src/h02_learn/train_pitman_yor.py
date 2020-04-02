@@ -3,9 +3,10 @@ import sys
 import torch
 
 sys.path.append('./src/')
-from h02_learn.dataset import get_data_loaders_with_folds
+from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
 from h02_learn.model import LstmLM
-from h02_learn.train import evaluate, train
+from h02_learn.train import evaluate, train, save_checkpoints
+from h02_learn.dataset.table_label import TableLabelDataset
 from util import constants, argparser
 from util import util
 from adaptor import Adaptor
@@ -34,6 +35,7 @@ def get_args():
     argparser.add_argument('--beta', type=float, required=True)
     argparser.add_argument('--adaptor-iterations', type=int, required=True)
     argparser.add_argument('--adaptor-state-file', type=str, required=True)
+    argparser.add_argument('--load-adaptor-init-state', default=False, action='store_true')
     args = argparser.parse_args()
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
@@ -69,26 +71,31 @@ def load_generator(alphabet, args):
     generator.train()
     return generator
 
-def train_with_pitman_yor(trainloader, devloader, alphabet, args, alpha, beta, total_iters, adaptor_iters, train_generator=False):
+def train_with_pitman_yor(trainloader, devloader, alphabet, args, alpha, beta, total_iters, adaptor_iters, train_generator):
     generator = get_model(alphabet, args)
-    if not train_generator:
+    if os.path.exists(args.checkpoints_path):
         generator = load_generator(alphabet, args)
-        generator_dev_loss = evaluate(devloader, generator, alphabet)
-        print('Generator dev loss', generator_dev_loss)
-    adaptor = Adaptor(alpha, beta, alphabet, trainloader, state_filename=args.adaptor_state_file)
+    adaptor = Adaptor(alpha, beta, alphabet, trainloader, state_filename=args.adaptor_state_file, load_state=args.load_adaptor_init_state)
+    tables_with_word_labels = adaptor.tables_with_word_label
     for i in range(total_iters):
         print('Iteration', i)
         # train generator
-        if train_generator:
-            print('Training the generator')
-            train(trainloader, devloader, generator, alphabet, args.eval_batches, args.wait_iterations)
+        generator_dev_loss = 0
+        if len(tables_with_word_labels) > 0:
+            print('Training the generator with table label data')
+            # us the dataset defined by the adaptor if present
+            tables_with_word_labels_dataset = TableLabelDataset(tables_with_word_labels, alphabet)
+            table_label_dataloader = get_data_loader(tables_with_word_labels_dataset, args.batch_size)
+            _, generator_dev_loss = train(table_label_dataloader, devloader, generator, alphabet, args.eval_batches, args.wait_iterations)
+            generator.save(args.checkpoints_path + '_retrained')
+        elif train_generator:
+            print('Training the generator with original dataset')
+            _, generator_dev_loss = train(trainloader, devloader, generator, alphabet, args.eval_batches, args.wait_iterations)
+        print('Generator dev loss', generator_dev_loss)
         # train adaptor
         print('Training the adaptor')
-        adaptor.fit(generator, iterations=adaptor_iters)
+        tables_with_word_labels = adaptor.fit(generator, iterations=adaptor_iters)
         print('Evaluating models')
-        if train_generator:
-            generator_dev_loss = evaluate(devloader, generator, alphabet)
-            print('Generator dev loss', generator_dev_loss)
         adaptor_dev_loss = evaluate_adaptor(devloader, generator, adaptor)
         print('Adaptor dev loss', adaptor_dev_loss)
     return generator, adaptor
