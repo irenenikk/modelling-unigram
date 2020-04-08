@@ -23,12 +23,13 @@ CHECKPOINT_TYPE_FILE := $(CHECKPOINT_TYPE_PATH)/model.tch
 CHECKPOINT_TOKEN_PATH := $(CHECKPOINT_DIR_LANG)/tokens
 CHECKPOINT_TOKEN_FILE := $(CHECKPOINT_TOKEN_PATH)/model.tch
 DOT:= .
-DASH:= -
-STRING_ALPHA = $(subst $(DOT),$(DASH),$(ALPHA))
-STRING_BETA = $(subst $(DOT),$(DASH),$(BETA))
+UNDERSCORE:= _
+STRING_ALPHA = $(subst $(DOT),$(UNDERSCORE),$(ALPHA))
+STRING_BETA = $(subst $(DOT),$(UNDERSCORE),$(BETA))
 ADAPTOR_STATE_FILE := $(CHECKPOINT_DIR_LANG)/adaptor_state_file_$(STRING_ALPHA)_$(STRING_BETA)
 RESULTS_FILE := $(RESULTS_DIR_LANG)/results.csv
-ADAPTOR_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_results.csv
+ADAPTOR_TOKEN_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_results_token_init.csv
+ADAPTOR_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_results_type_init.csv
 
 
 all: get_wiki
@@ -39,12 +40,33 @@ eval: $(RESULTS_FILE)
 train: $(CHECKPOINT_TOKEN_FILE)
 	echo "Finished training model" $(LANGUAGE)
 
+two_stage: $(ADAPTOR_TYPE_RESULTS_FILE)
+	echo "Finished training two-stage model" $(LANGUAGE)
+
 get_wiki: $(PROCESSED_DATA_FILE)
 	echo "Finished getting wikipedia data" $(LANGUAGE)
 
 clean:
 	# rm $(TOKENIZED_FILE) $(PROCESSED_DATA_FILE)
 	rm $(PROCESSED_DATA_FILE)
+
+# Train two-stage model initialising with types
+$(ADAPTOR_TYPE_RESULTS_FILE): $(PROCESSED_DATA_FILE)
+	echo "Train two-stage model" $(CHECKPOINT_TYPE_FILE)
+	mkdir -p $(CHECKPOINT_TYPE_PATH)
+	mkdir -p $(CHECKPOINT_TYPE_PATH)_retrained
+	mkdir -p $(RESULTS_DIR_LANG)
+	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_TYPE_PATH) --dataset tokens \
+			--adaptor-results-file $(ADAPTOR_TYPE_RESULTS_FILE)_type_init --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE)
+
+# Train two-stage model initialising with tokens
+$(ADAPTOR_TOKEN_RESULTS_FILE): $(PROCESSED_DATA_FILE)
+	echo "Train two-stage model" $(CHECKPOINT_TOKEN_FILE)
+	mkdir -p $(CHECKPOINT_TOKEN_PATH)
+	mkdir -p $(CHECKPOINT_TOKEN_PATH)_retrained
+	mkdir -p $(RESULTS_DIR_LANG)
+	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens \
+			--adaptor-results-file $(ADAPTOR_TOKEN_RESULTS_FILE)_token_init --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE)
 
 # Eval language models
 $(RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
@@ -63,24 +85,6 @@ $(CHECKPOINT_TYPE_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train types model" $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)
 	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_TYPE_PATH) --dataset types
-
-# Train two-stage model initialising with types
-$(CHECKPOINT_TYPE_FILE): $(PROCESSED_DATA_FILE)
-	echo "Train two-stage model" $(CHECKPOINT_TYPE_FILE)
-	mkdir -p $(CHECKPOINT_TYPE_PATH)
-	mkdir -p $(CHECKPOINT_TYPE_PATH)_retrained
-	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_TYPE_PATH) --dataset tokens \
-			--adaptor-results-file $(ADAPTOR_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE)
-
-# Train two-stage model initialising with tokens
-$(CHECKPOINT_TOKEN_FILE): $(PROCESSED_DATA_FILE)
-	echo "Train two-stage model" $(CHECKPOINT_TOKEN_FILE)
-	mkdir -p $(CHECKPOINT_TOKEN_PATH)
-	mkdir -p $(CHECKPOINT_TOKEN_PATH)_retrained
-	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens \
-			--adaptor-results-file $(ADAPTOR_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE)
 
 # Preprocess Data
 $(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)
