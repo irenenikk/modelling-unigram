@@ -33,7 +33,7 @@ def get_args():
     # adaptor
     argparser.add_argument('--alpha', type=float, required=True)
     argparser.add_argument('--beta', type=float, required=True)
-    argparser.add_argument('--adaptor-iterations', type=int, required=True)
+    argparser.add_argument('--adaptor-iterations', type=int, default=10)
     argparser.add_argument('--adaptor-state-file', type=str, required=True)
     argparser.add_argument('--load-adaptor-init-state', default=False, action='store_true')
     args = argparser.parse_args()
@@ -56,13 +56,14 @@ def evaluate_adaptor(dataloader, generator, adaptor):
     dataloader.dataset.train()
     return cross_entropy
 
-def save_pitman_yor_results(model, alpha, beta, train_loss, dev_loss, test_loss, results_fname):
+def save_pitman_yor_results(model, args, train_loss, dev_loss, test_loss, generator_dev_loss, generator_test_loss):
+    results_fname = args.adaptor_results_file
     print('Saving to', results_fname)
     results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
-                'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss', 'test_loss']]
+                'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss', 'test_loss', 'generator_dev_losss', 'generator_test_loss', 'total_epochs', 'adaptor_iterations']]
     results += [[model.alphabet_size, model.embedding_size, model.hidden_size,
-                 model.nlayers, model.dropout_p, alpha, beta,
-                 train_loss, dev_loss, test_loss]]
+                 model.nlayers, model.dropout_p, args.alpha, args.beta,
+                 train_loss, dev_loss, test_loss, generator_dev_loss, generator_test_loss, args.epochs], args.adaptor_iterations]
     util.write_csv(results_fname, results)
 
 def load_generator(alphabet, args):
@@ -71,31 +72,24 @@ def load_generator(alphabet, args):
     generator.train()
     return generator
 
-def train_with_pitman_yor(trainloader, devloader, alphabet, args, alpha, beta, total_iters, adaptor_iters, train_generator):
-    generator = get_model(alphabet, args)
-    if os.path.exists(args.checkpoints_path):
-        generator = load_generator(alphabet, args)
+def train_with_pitman_yor(trainloader, devloader, alphabet, args, alpha, beta, total_iters, adaptor_iters):
+    generator = load_generator(alphabet, args)
     adaptor = Adaptor(alpha, beta, alphabet, trainloader, state_filename=args.adaptor_state_file, load_state=args.load_adaptor_init_state)
     tables_with_word_labels = adaptor.tables_with_word_label
     for i in range(total_iters):
         print('Iteration', i)
         # train generator
-        generator_dev_loss = 0
         if len(tables_with_word_labels) > 0:
             print('Training the generator with table label data')
             # us the dataset defined by the adaptor if present
             tables_with_word_labels_dataset = TableLabelDataset(tables_with_word_labels, alphabet)
             table_label_dataloader = get_data_loader(tables_with_word_labels_dataset, args.batch_size)
             _, generator_dev_loss = train(table_label_dataloader, devloader, generator, alphabet, args.eval_batches, args.wait_iterations)
-            generator.save(args.checkpoints_path + '_retrained')
-        elif train_generator:
-            print('Training the generator with original dataset')
-            _, generator_dev_loss = train(trainloader, devloader, generator, alphabet, args.eval_batches, args.wait_iterations)
-        print('Generator dev loss', generator_dev_loss)
+            #generator.save(args.checkpoints_path + '_retrained')
+            print('Generator dev loss', generator_dev_loss)
         # train adaptor
         print('Training the adaptor')
         tables_with_word_labels = adaptor.fit(generator, iterations=adaptor_iters)
-        print('Evaluating models')
         adaptor_dev_loss = evaluate_adaptor(devloader, generator, adaptor)
         print('Adaptor dev loss', adaptor_dev_loss)
     return generator, adaptor
@@ -127,7 +121,7 @@ def main():
     alpha = args.alpha
     beta = args.beta
     generator, adaptor = train_with_pitman_yor(trainloader, devloader, alphabet, args,\
-                                                alpha, beta, args.epochs, args.adaptor_iterations, train_generator=args.train_generator)
+                                                alpha, beta, args.epochs, args.adaptor_iterations)
 
     print('Getting generator training loss')
     generator_train_loss = evaluate(trainloader, generator, alphabet)
@@ -146,8 +140,8 @@ def main():
     print('Adaptor Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
           (adaptor_train_loss, adaptor_dev_loss, adaptor_test_loss))
 
-    save_pitman_yor_results(generator, alpha, beta, adaptor_train_loss, adaptor_dev_loss,\
-                            adaptor_test_loss, args.adaptor_results_file)
+    save_pitman_yor_results(generator, args, adaptor_train_loss, adaptor_dev_loss, adaptor_test_loss,\
+                                generator_dev_loss, generator_test_loss)
 
 
 if __name__ == '__main__':
