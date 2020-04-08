@@ -13,7 +13,7 @@ def config(seed):
 
 
 def write_csv(filename, results):
-    with io.open(filename, 'w', encoding='utf8') as f:
+    with io.open(filename, 'a', encoding='utf8') as f:
         writer = csv.writer(f, delimiter=',')
         writer.writerows(results)
 

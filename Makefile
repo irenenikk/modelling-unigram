@@ -32,7 +32,7 @@ ADAPTOR_TOKEN_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_results_token_init.csv
 ADAPTOR_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_results_type_init.csv
 
 
-all: get_wiki
+all: get_wiki train eval two_stage
 
 eval: $(RESULTS_FILE)
 	echo "Finished evaluating model" $(LANGUAGE)

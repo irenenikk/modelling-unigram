@@ -1,6 +1,7 @@
 import os
 import sys
 import torch
+import time
 
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
@@ -56,14 +57,16 @@ def evaluate_adaptor(dataloader, generator, adaptor):
     dataloader.dataset.train()
     return cross_entropy
 
-def save_pitman_yor_results(model, args, train_loss, dev_loss, test_loss, generator_dev_loss, generator_test_loss):
+def save_pitman_yor_results(model, args, train_loss, dev_loss, test_loss, generator_dev_loss, generator_test_loss, training_time):
     results_fname = args.adaptor_results_file
     print('Saving to', results_fname)
     results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
-                'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss', 'test_loss', 'generator_dev_losss', 'generator_test_loss', 'total_epochs', 'adaptor_iterations']]
+                'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss', 'test_loss',\
+                    'generator_dev_losss', 'generator_test_loss', 'total_epochs', 'adaptor_iterations', 'training_time']]
     results += [[model.alphabet_size, model.embedding_size, model.hidden_size,
                  model.nlayers, model.dropout_p, args.alpha, args.beta,
-                 train_loss, dev_loss, test_loss, generator_dev_loss, generator_test_loss, args.epochs], args.adaptor_iterations]
+                 train_loss, dev_loss, test_loss, generator_dev_loss, generator_test_loss,\
+                    args.epochs, args.adaptor_iterations, training_time]]
     util.write_csv(results_fname, results)
 
 def load_generator(alphabet, args):
@@ -118,10 +121,15 @@ def main():
     print('Train size: %d Dev size: %d Test size: %d' %
           (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
+    start = time.time()
+
     alpha = args.alpha
     beta = args.beta
     generator, adaptor = train_with_pitman_yor(trainloader, devloader, alphabet, args,\
                                                 alpha, beta, args.epochs, args.adaptor_iterations)
+
+    end = time.time()
+    training_time = end - start
 
     print('Getting generator training loss')
     generator_train_loss = evaluate(trainloader, generator, alphabet)
@@ -141,7 +149,7 @@ def main():
           (adaptor_train_loss, adaptor_dev_loss, adaptor_test_loss))
 
     save_pitman_yor_results(generator, args, adaptor_train_loss, adaptor_dev_loss, adaptor_test_loss,\
-                                generator_dev_loss, generator_test_loss)
+                                generator_dev_loss, generator_test_loss, training_time)
 
 
 if __name__ == '__main__':
