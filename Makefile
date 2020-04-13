@@ -27,7 +27,7 @@ UNDERSCORE:= _
 STRING_ALPHA = $(subst $(DOT),$(UNDERSCORE),$(ALPHA))
 STRING_BETA = $(subst $(DOT),$(UNDERSCORE),$(BETA))
 ADAPTOR_STATE_FILE := $(CHECKPOINT_DIR_LANG)/adaptor_state_file_$(STRING_ALPHA)_$(STRING_BETA)
-RESULTS_FILE := $(RESULTS_DIR_LANG)/results.csv
+RESULTS_FILE := $(RESULTS_DIR_LANG)/lstm_results.csv
 ADAPTOR_TOKEN_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_results_token_init.csv
 ADAPTOR_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_results_type_init.csv
 
@@ -56,8 +56,8 @@ $(ADAPTOR_TYPE_RESULTS_FILE): $(PROCESSED_DATA_FILE)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)_retrained
 	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_TYPE_PATH) --dataset tokens \
-			--adaptor-results-file $(ADAPTOR_TYPE_RESULTS_FILE)_type_init --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE)
+	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset tokens \
+			--adaptor-results-file $(ADAPTOR_TYPE_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE)
 
 # Train two-stage model initialising with tokens
 $(ADAPTOR_TOKEN_RESULTS_FILE): $(PROCESSED_DATA_FILE)
@@ -65,8 +65,8 @@ $(ADAPTOR_TOKEN_RESULTS_FILE): $(PROCESSED_DATA_FILE)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)_retrained
 	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens \
-			--adaptor-results-file $(ADAPTOR_TOKEN_RESULTS_FILE)_token_init --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE)
+	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens \
+			--adaptor-results-file $(ADAPTOR_TOKEN_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE)
 
 # Eval language models
 $(RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
@@ -78,13 +78,13 @@ $(RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
 $(CHECKPOINT_TOKEN_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train tokens model" $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)
-	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens
+	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens
 
 # Train types model
 $(CHECKPOINT_TYPE_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train types model" $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)
-	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --checkpoints-path $(CHECKPOINT_TYPE_PATH) --dataset types
+	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset types
 
 # Preprocess Data
 $(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)
