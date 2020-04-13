@@ -50,7 +50,7 @@ def train_with_pitman_yor(trainloader, devloader, alphabet, epochs, training_arg
     generator.train()
     adaptor = Adaptor(training_args['alpha'], training_args['beta'], alphabet, trainloader, state_filename=training_args['adaptor_state_file'],\
                         load_state=training_args['load_adaptor_init_state'], save_state=training_args['save_adaptor_state'])
-    tables_with_word_labels = adaptor.tables_with_word_label
+    tables_with_word_labels = adaptor.state['tables_with_word_label']
     for i in range(epochs):
         print('Iteration', i)
         # train generator
@@ -101,7 +101,7 @@ def main():
 
     start = time.time()
 
-    training_args = build_training_args(args, save_adaptor_state=Trua)
+    training_args = build_training_args(args, save_adaptor_state=True)
     generator, adaptor, adaptor_dev_loss = train_with_pitman_yor(trainloader, devloader, alphabet, args.epochs, training_args)
 
     end = time.time()

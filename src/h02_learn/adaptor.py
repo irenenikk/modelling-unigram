@@ -7,40 +7,35 @@ from util.util import hacked_exp, write_data, read_data
 
 class Adaptor:
     def __init__(self, alpha, beta, alphabet, dataloader, state_filename, load_state=False, save_state=True):
-        self.saved_state_file = state_filename
+        self.state = {}
+        self.state['saved_state_file'] = state_filename
         # initialise mapping from table index to n.o. customers
         # int --> int
-        self.customers_per_table = defaultdict(int)
+        self.state['customers_per_table'] = defaultdict(int)
         # initialise mapping from table indices to labels
         # int --> list(int)
-        self.tables_with_word_label = defaultdict(set)
+        self.state['tables_with_word_label'] = defaultdict(set)
         # initialise mapping from customer id to table id
         # int --> int
-        self.table_assignments = {}
+        self.state['table_assignments'] = {}
         # this index doesn't have to be "accurate"
         # there may be gaps in the indices as some tables are removed
         # but we just want to make sure that every table index is unique
-        self.max_table_index = -1
+        self.state['max_table_index'] = -1
         # this is marked as the function K in the original paper
-        self.total_tables = 0
-        self.alpha = torch.Tensor([alpha])
-        self.beta = torch.Tensor([beta])
+        self.state['total_tables'] = 0
+        self.state['alpha'] = torch.Tensor([alpha])
+        self.state['beta'] = torch.Tensor([beta])
         self.save_state = save_state
-        self.state = {}
         if load_state:
             self.set_adaptor_state()
         self.token_dataloader = dataloader
-        self.alphabet = alphabet
+        self.state['alphabet'] = alphabet
         print('Token data length in adaptor', len(self.token_dataloader))
 
     def set_adaptor_state(self):
         try:
             self.load_fitted_adaptor()
-            self.tables_with_word_label = self.state['tables_with_word_label']
-            self.total_tables = self.state['total_tables']
-            self.customers_per_table = self.state['customers_per_table']
-            self.table_assignments = self.state['table_assignments']
-            self.max_table_index = self.state['max_table_index']
         except:
             print('Could not load adaptor state')
 
@@ -50,10 +45,10 @@ class Adaptor:
         if table_index < 0:
             # choose new table index
             # increment counter for total amount of tables
-            self.total_tables += 1
+            self.state['total_tables'] += 1
             # increment table id counter
-            self.max_table_index += 1
-            return self.max_table_index
+            self.state['max_table_index'] += 1
+            return self.state['max_table_index']
         return table_index
 
     def calculate_cross_entropy(self, dataloader, generator):
@@ -65,7 +60,7 @@ class Adaptor:
             for i, log_prob in enumerate(generator_logprobs):
                 # do not use the start of word index
                 token_indices = x[i][1:]
-                token = ''.join(self.alphabet.idx2word(token_indices))
+                token = ''.join(self.state['alphabet'].idx2word(token_indices))
                 word_logprob = self.get_token_probability(log_prob, token)
                 entropy += -word_logprob * weights[i]
                 total_tokens += weights[i]
@@ -90,20 +85,12 @@ class Adaptor:
         c_in_tables_with_label = defaultdict(int)
         for x, _, _ in self.token_dataloader:
             for word_indices in x:
-                word = ''.join(self.alphabet.idx2word(word_indices[1:]))
-                c_in_tables_with_label[word] = sum([self.customers_per_table[table_id] \
-                                        for table_id in self.tables_with_word_label[word]])
+                word = ''.join(self.state['alphabet'].idx2word(word_indices[1:]))
+                c_in_tables_with_label[word] = sum([self.state['customers_per_table'][table_id] \
+                                        for table_id in self.state['tables_with_word_label'][word]])
         return c_in_tables_with_label
 
     def save_fitted_adaptor(self, state_filename=None):
-        self.state['tables_with_word_label'] = self.tables_with_word_label
-        self.state['total_tables'] = self.total_tables
-        self.state['alpha'] = self.alpha
-        self.state['beta'] = self.beta
-        self.state['dataset_length'] = len(self.token_dataloader.dataset)
-        self.state['customers_per_table'] = self.customers_per_table
-        self.state['table_assignments'] = self.table_assignments
-        self.state['max_table_index'] = self.max_table_index
         customers_in_tables_with_label = self.count_customers_in_tables_with_label()
         self.state['customers_in_tables_with_label'] = customers_in_tables_with_label
         saved_state_filename = state_filename
@@ -126,11 +113,11 @@ class Adaptor:
     def _calculate_table_logprobs(self, token, token_logprob):
         table_logprobs = []
         # calculate probability of assigning to old table
-        for table_id in self.tables_with_word_label[token]:
-            table_prob = torch.log(self.customers_per_table[table_id] - self.alpha)
+        for table_id in self.state['tables_with_word_label'][token]:
+            table_prob = torch.log(self.state['customers_per_table'][table_id] - self.state['alpha'])
             table_logprobs.append((table_prob.item(), table_id))
         # calculate probability of assigning to new table
-        new_table_logprob = torch.log(torch.Tensor([self.total_tables*self.alpha + self.beta])) + \
+        new_table_logprob = torch.log(torch.Tensor([self.state['total_tables']*self.state['alpha'] + self.state['beta']])) + \
                             token_logprob
         table_logprobs.append((new_table_logprob.item(), -1))
         return table_logprobs
@@ -143,26 +130,26 @@ class Adaptor:
             for i, token_logprob in enumerate(tokens_logprobs):
                 token_id = token_ids[i].item()
                 token_indices = x[i][1:]
-                token = ''.join(self.alphabet.idx2word(token_indices))
-                if token_id in self.table_assignments:
-                    token_table_id = self.table_assignments[token_id]
+                token = ''.join(self.state['alphabet'].idx2word(token_indices))
+                if token_id in self.state['table_assignments']:
+                    token_table_id = self.state['table_assignments'][token_id]
                     # remove customer from table
-                    self.customers_per_table[token_table_id] -= 1
+                    self.state['customers_per_table'][token_table_id] -= 1
                     # if table is empty then don't associate with word anymore
-                    if self.customers_per_table[token_table_id] == 0:
-                        self.tables_with_word_label[token].remove(token_table_id)
-                        self.total_tables -= 1
+                    if self.state['customers_per_table'][token_table_id] == 0:
+                        self.state['tables_with_word_label'][token].remove(token_table_id)
+                        self.state['total_tables'] -= 1
                 table_logprobs = self._calculate_table_logprobs(token, token_logprob)
                 # normalise to probabilities before sampling
                 table_probs = self._normalise_table_probabilities(table_logprobs)
                 assigned_table_id = self._sample_new_table_assignment(table_probs)
                 # put customer to new table
-                self.customers_per_table[assigned_table_id] += 1
+                self.state['customers_per_table'][assigned_table_id] += 1
                 # store info about amount of labels
-                self.tables_with_word_label[token].add(assigned_table_id)
-                self.table_assignments[token_id] = assigned_table_id
+                self.state['tables_with_word_label'][token].add(assigned_table_id)
+                self.state['table_assignments'][token_id] = assigned_table_id
         if self.save_state:
             print('Saving adaptor state to', self.saved_state_file)
             self.save_fitted_adaptor()
         print('Done fitting the adaptor')
-        return self.tables_with_word_label
+        return self.state['tables_with_word_label']
