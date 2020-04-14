@@ -13,9 +13,6 @@ from util import constants
 
 
 def get_args():
-    # Data
-    argparser.add_argument('--dataset', type=str)
-    argparser.add_argument('--data-file', type=str)
     # Optimization
     argparser.add_argument('--eval-batches', type=int, default=200)
     argparser.add_argument('--wait-epochs', type=int, default=5)

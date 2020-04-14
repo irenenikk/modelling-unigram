@@ -10,10 +10,6 @@ from util import constants, argparser
 
 def get_args():
     argparser.add_argument('--epochs', type=int, default=5)
-    # Data
-    argparser.add_argument('--dataset', type=str)
-    argparser.add_argument('--data-file', type=str)
-    argparser.add_argument('--batch-size', type=int, default=32)
     # Save
     argparser.add_argument('--generator-path', type=str)
     argparser.add_argument('--adaptor-results-file', type=str, required=True)

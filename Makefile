@@ -72,7 +72,7 @@ $(ADAPTOR_TOKEN_RESULTS_FILE): $(PROCESSED_DATA_FILE)
 $(RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
 	echo "Eval models" $(RESULTS_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h03_eval/eval.py --data-file $(PROCESSED_DATA_FILE) --eval-path $(CHECKPOINT_DIR_LANG) --results-file $(RESULTS_FILE) --dataset tokens
+	python src/h03_eval/eval_generator.py --data-file $(PROCESSED_DATA_FILE) --eval-path $(CHECKPOINT_DIR_LANG) --results-file $(RESULTS_FILE) --dataset tokens
 
 # Train tokens model
 $(CHECKPOINT_TOKEN_FILE): $(PROCESSED_DATA_FILE)

@@ -11,9 +11,6 @@ from util import constants
 
 
 def get_args():
-    # Data
-    argparser.add_argument('--dataset', type=str)
-    argparser.add_argument('--data-file', type=str)
     # Models
     argparser.add_argument('--eval-path', type=str, required=True)
     # Save
@@ -60,9 +57,9 @@ def eval_all(model_paths, dataloaders):
             print('Evaluating model: %s on dataset: %s' %
                   (model_name, dataset))
 
-            train_loss = evaluate(trainloader, model, alphabet)
-            dev_loss = evaluate(devloader, model, alphabet)
-            test_loss = evaluate(testloader, model, alphabet)
+            train_loss = evaluate_generator(trainloader, model, alphabet)
+            dev_loss = evaluate_generator(devloader, model, alphabet)
+            test_loss = evaluate_generator(testloader, model, alphabet)
 
             print('Final %s Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
                   (dataset, train_loss, dev_loss, test_loss))
