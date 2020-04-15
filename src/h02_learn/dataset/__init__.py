@@ -32,11 +32,15 @@ def generate_batch(batch):
         x[i, :sent_len] = sentence[:-1]
         y[i, :sent_len] = sentence[1:]
 
+    x, y = x.to(device=constants.device), y.to(device=constants.device)
     if len(batch[0]) == 3:
         # return the index in training
-        return x, y, torch.Tensor([b[2] for b in batch])
+        index = torch.Tensor([b[2] for b in batch])
+        index = index.to(device=constants.device)
+        return x, y, index
 
     weights = torch.cat([entry[1] for entry in batch])
+    weights = weights.to(device=constants.device)
     return x, y, weights
 
 

@@ -34,7 +34,6 @@ def get_model(alphabet_size, args):
 
 def train_batch(x, y, model, optimizer, criterion):
     optimizer.zero_grad()
-    x, y = x.to(device=constants.device), y.to(device=constants.device)
     y_hat = model(x)
     loss = criterion(y_hat.reshape(-1, y_hat.shape[-1]), y.reshape(-1))
     loss.backward()

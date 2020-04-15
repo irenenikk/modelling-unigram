@@ -35,7 +35,7 @@ ADAPTOR_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_results_type_init.csv
 
 all: get_wiki train eval two_stage
 
-two_stage: $(ADAPTOR_TYPE_RESULTS_FILE)
+two_stage: $(ADAPTOR_TYPE_RESULTS_FILE) $(ADAPTOR_TOKEN_RESULTS_FILE)
 	echo "Finished training two-stage model" $(LANGUAGE)
 
 eval: $(RESULTS_FILE)
@@ -51,7 +51,7 @@ clean:
 	rm $(PROCESSED_DATA_FILE)
 
 # Train two-stage model initialising with types
-$(ADAPTOR_TYPE_RESULTS_FILE): $(PROCESSED_DATA_FILE)
+$(ADAPTOR_TYPE_RESULTS_FILE): $(CHECKPOINT_TYPE_FILE)
 	echo "Train two-stage model" $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)_retrained
@@ -60,7 +60,7 @@ $(ADAPTOR_TYPE_RESULTS_FILE): $(PROCESSED_DATA_FILE)
 			--adaptor-results-file $(ADAPTOR_TYPE_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_SAMPLES)
 
 # Train two-stage model initialising with tokens
-$(ADAPTOR_TOKEN_RESULTS_FILE): $(PROCESSED_DATA_FILE)
+$(ADAPTOR_TOKEN_RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE)
 	echo "Train two-stage model" $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)_retrained
