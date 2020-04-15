@@ -62,19 +62,21 @@ def get_data_loader(dataset, batch_size, shuffle=True):
     return dataloader
 
 
-def get_data_loader_with_folds(dataset_cls, data, folds, batch_size, shuffle):
+def get_data_loader_with_folds(dataset_cls, data, folds, batch_size, shuffle, n=None):
     trainset = dataset_cls(data, folds)
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=shuffle,
-                             collate_fn=generate_batch)
-    return trainloader
+    if n is None or n >= len(trainset):
+        return DataLoader(trainset, batch_size=batch_size, shuffle=shuffle, collate_fn=generate_batch)
+    indices = np.random.permutation(len(trainset))[:n]
+    return DataLoader(trainset, batch_size=batch_size, collate_fn=generate_batch,\
+                                sampler=SubsetRandomSampler(indices))
 
 
-def get_data_loaders_with_folds(data_type, fname, folds, batch_size):
+def get_data_loaders_with_folds(data_type, fname, folds, batch_size, train_n=None):
     dataset_cls = get_data_cls(data_type)
     data = load_data(fname)
     alphabet = get_alphabet(data)
     trainloader = get_data_loader_with_folds(dataset_cls, data, folds[0],\
-                                            batch_size=batch_size, shuffle=True)
+                                            batch_size=batch_size, shuffle=True, n=train_n)
     devloader = get_data_loader_with_folds(dataset_cls, data, folds[1],\
                                             batch_size=batch_size, shuffle=False)
     testloader = get_data_loader_with_folds(dataset_cls, data, folds[2],\

@@ -15,6 +15,8 @@ from h02_learn.adaptor import Adaptor
 
 def get_args():
     argparser.add_argument('--epochs', type=int, default=5)
+    # Data
+    argparser.add_argument('--train-num', type=int, default=None)
     # Optimization
     argparser.add_argument('--eval-batches', type=int, default=200)
     argparser.add_argument('--wait-epochs', type=int, default=5)
@@ -95,9 +97,14 @@ def main():
     folds = [list(range(8)), [8], [9]]
 
     trainloader, devloader, testloader, alphabet = \
-        get_data_loaders_with_folds(args.dataset, args.data_file, folds, args.batch_size)
-    print('Train size: %d Dev size: %d Test size: %d' %
-          (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
+        get_data_loaders_with_folds(args.dataset, args.data_file, folds, args.batch_size, args.train_num)
+
+    trainset_size = len(trainloader.dataset)
+    if args.train_num is not None and args.train_num < trainset_size:
+        trainset_size = args.train_num
+
+    print('Train size: %d Dev size: %d' %
+          (len(trainloader.dataset), len(devloader.dataset)))
 
     start = time.time()
 
@@ -121,7 +128,7 @@ def main():
           (adaptor_train_loss, adaptor_dev_loss))
 
     save_pitman_yor_training_results(generator, args, adaptor_train_loss, adaptor_dev_loss,\
-                                        generator_dev_loss, training_time, len(trainloader.dataset), len(devloader.dataset))
+                                        generator_dev_loss, training_time, trainset_size, len(devloader.dataset))
 
 
 if __name__ == '__main__':

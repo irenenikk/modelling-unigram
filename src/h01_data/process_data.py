@@ -17,7 +17,7 @@ def get_args():
         "--n-folds", type=int, default=10,
         help="Number of folds to split data")
     argparser.add_argument(
-        "--max-sentences", type=int, default=2500,
+        "--max-sentences", type=int, default=4000,
         help="Maximum number of sentences used")
     return argparser.parse_args()
 

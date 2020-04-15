@@ -18,7 +18,8 @@ def get_args():
     argparser.add_argument('--wait-epochs', type=int, default=5)
     # Save
     argparser.add_argument('--generator-path', type=str)
-
+    # Data
+    argparser.add_argument('--train-num', type=int, default=None)
     args = argparser.parse_args()
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
@@ -68,19 +69,19 @@ def train(trainloader, devloader, model, alphabet, eval_batches, wait_iterations
     return loss, dev_loss
 
 
-def save_results(model, train_loss, dev_loss, test_loss, results_fname):
+def save_results(model, train_loss, dev_loss, train_size, dev_size, results_fname):
     results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
-                'dropout_p', 'train_loss', 'dev_loss', 'test_loss']]
+                'dropout_p', 'train_loss', 'dev_loss', 'train_size', 'dev_size']]
     results += [[model.alphabet_size, model.embedding_size, model.hidden_size,
-                 model.nlayers, model.dropout_p,
-                 train_loss, dev_loss, test_loss]]
+                 model.nlayers, model.dropout_p, train_loss, dev_loss,
+                 train_size, dev_size]]
     util.write_csv(results_fname, results)
 
 
-def save_checkpoints(model, train_loss, dev_loss, test_loss, checkpoints_path):
+def save_checkpoints(model, train_loss, dev_loss, train_size, dev_size, checkpoints_path):
     model.save(checkpoints_path)
     results_fname = checkpoints_path + '/results.csv'
-    save_results(model, train_loss, dev_loss, test_loss, results_fname)
+    save_results(model, train_loss, dev_loss, train_size, dev_size, results_fname)
 
 
 def main():
@@ -88,9 +89,14 @@ def main():
     folds = [list(range(8)), [8], [9]]
 
     trainloader, devloader, testloader, alphabet = \
-        get_data_loaders_with_folds(args.dataset, args.data_file, folds, args.batch_size)
-    print('Train size: %d Dev size: %d Test size: %d' %
-          (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
+        get_data_loaders_with_folds(args.dataset, args.data_file, folds, args.batch_size, args.train_num)
+        
+    trainset_size = len(trainloader.dataset)
+    if args.train_num is not None and args.train_num < trainset_size:
+        trainset_size = args.train_num
+
+    print('Train size: %d Dev size: %d ' %
+          (trainset_size, len(devloader.dataset)))
 
     model = get_model(len(alphabet), args)
     train(trainloader, devloader, model, alphabet, args.eval_batches, args.wait_iterations)
@@ -99,11 +105,10 @@ def main():
     dev_loss = evaluate_generator(devloader, model, alphabet)
     test_loss = evaluate_generator(testloader, model, alphabet)
 
-    print('Final Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
-          (train_loss, dev_loss, test_loss))
+    print('Final Training loss: %.4f Dev loss: %.4f ' %
+          (train_loss, dev_loss))
 
-    save_checkpoints(model, train_loss, dev_loss, test_loss, args.checkpoints_path)
-
+    save_checkpoints(model, train_loss, dev_loss, trainset_size, len(devloader.dataset), args.checkpoints_path)
 
 if __name__ == '__main__':
     main()
