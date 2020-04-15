@@ -55,7 +55,7 @@ def train(trainloader, devloader, model, alphabet, eval_batches, wait_iterations
             train_info.new_batch(loss)
 
             if train_info.eval:
-                dev_loss = evaluate(devloader, model, alphabet)
+                dev_loss = evaluate_generator(devloader, model, alphabet)
 
                 if train_info.is_best(dev_loss):
                     model.set_best()
@@ -95,9 +95,9 @@ def main():
     model = get_model(len(alphabet), args)
     train(trainloader, devloader, model, alphabet, args.eval_batches, args.wait_iterations)
 
-    train_loss = evaluate(trainloader, model, alphabet)
-    dev_loss = evaluate(devloader, model, alphabet)
-    test_loss = evaluate(testloader, model, alphabet)
+    train_loss = evaluate_generator(trainloader, model, alphabet)
+    dev_loss = evaluate_generator(devloader, model, alphabet)
+    test_loss = evaluate_generator(testloader, model, alphabet)
 
     print('Final Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
           (train_loss, dev_loss, test_loss))
