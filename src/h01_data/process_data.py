@@ -14,9 +14,6 @@ def get_args():
         "--wikipedia-tokenized-file", type=str,
         help="The file in which wikipedia tokenized results should be")
     argparser.add_argument(
-        "--data-file", type=str,
-        help="The file in which processed data should be saved")
-    argparser.add_argument(
         "--n-folds", type=int, default=10,
         help="Number of folds to split data")
     argparser.add_argument(

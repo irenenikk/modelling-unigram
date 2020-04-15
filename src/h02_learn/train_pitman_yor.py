@@ -79,15 +79,15 @@ def build_training_args(args, save_adaptor_state):
     training_args['save_adaptor_state'] = save_adaptor_state
     return training_args
 
-def save_pitman_yor_training_results(model, args, train_loss, dev_loss, generator_dev_loss, generator_test_loss, training_time):
+def save_pitman_yor_training_results(model, args, train_loss, dev_loss, generator_dev_loss, generator_test_loss, training_time, train_size, dev_size):
     results_fname = args.adaptor_results_file
     print('Saving to', results_fname)
     results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
                 'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss',\
-                'generator_dev_losss', 'total_epochs', 'adaptor_iterations', 'training_time']]
+                'generator_dev_losss', 'total_epochs', 'adaptor_iterations', 'training_time', 'train_size', 'dev_size']]
     results += [[model.alphabet_size, model.embedding_size, model.hidden_size, model.nlayers,\
                 model.dropout_p, args.alpha, args.beta, train_loss, dev_loss,\
-                generator_dev_loss, args.epochs, args.adaptor_iterations, training_time]]
+                generator_dev_loss, args.epochs, args.adaptor_iterations, training_time, train_size, dev_size]]
     util.write_csv(results_fname, results)
 
 def main():
@@ -121,7 +121,7 @@ def main():
           (adaptor_train_loss, adaptor_dev_loss))
 
     save_pitman_yor_training_results(generator, args, adaptor_train_loss, adaptor_dev_loss,\
-                                generator_dev_loss, training_time)
+                                        generator_dev_loss, training_time, len(trainloader.dataset), len(devloader.dataset))
 
 
 if __name__ == '__main__':

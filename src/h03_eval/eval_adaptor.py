@@ -30,13 +30,13 @@ def evaluate_adaptor(dataloader, generator, adaptor):
     dataloader.dataset.train()
     return cross_entropy
 
-def save_pitman_yor_results(model, alpha, beta, train_loss, dev_loss, test_loss):
+def save_pitman_yor_results(model, alpha, beta, train_loss, dev_loss, test_loss, test_size):
     results_fname = args.adaptor_results_file
     print('Saving to', results_fname)
     results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
-                'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss', 'test_loss']]
+                'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss', 'test_loss', 'test_size']]
     results += [[model.alphabet_size, model.embedding_size, model.hidden_size, model.nlayers,\
-                model.dropout_p, alpha, beta, train_loss, dev_loss, test_loss]]
+                model.dropout_p, alpha, beta, train_loss, dev_loss, test_loss, test_size]]
     util.write_csv(results_fname, results)
 
 def main():
@@ -60,7 +60,7 @@ def main():
     print('Adaptor Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
           (train_loss, dev_loss, test_loss))
 
-    save_pitman_yor_results(generator, adaptor.alpha, adaptor.beta, train_loss, dev_loss, test_loss)
+    save_pitman_yor_results(generator, adaptor.alpha, adaptor.beta, train_loss, dev_loss, test_loss, len(testloader.dataset))
 
 
 if __name__ == '__main__':
