@@ -1,8 +1,10 @@
 import torch
+import numpy as np
+
+from util import constants
+from util import util
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
-import numpy as np
-from util import util
 from .types import TypeDataset
 from .tokens import TokenDataset
 
