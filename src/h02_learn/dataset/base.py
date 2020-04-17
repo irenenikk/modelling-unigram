@@ -1,3 +1,4 @@
+import torch
 from abc import ABC, abstractmethod
 from torch.utils.data import Dataset
 
@@ -34,9 +35,9 @@ class BaseDataset(Dataset, ABC):
         return self.eval_instances
 
     def __getitem__(self, index):
-        if self._train:
-            return (self.word_train[index], None, index)
-        return (self.word_eval[index], self.weights[index])
+        word = self.word_train[index] if self._train else self.word_eval[index]
+        weight = torch.Tensor([1]) if self._train else self.weights[index]
+        return (word, weight, index)
 
     def train(self):
         self._train = True

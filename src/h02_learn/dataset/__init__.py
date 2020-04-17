@@ -29,21 +29,15 @@ def generate_batch(batch):
     y = tensor.new_zeros(batch_size, max_length)
 
     for i, item in enumerate(batch):
-        sentence = item[0]
-        sent_len = len(sentence) - 1  # Does not need to predict SOS
-        x[i, :sent_len] = sentence[:-1]
-        y[i, :sent_len] = sentence[1:]
+        word = item[0]
+        word_len = len(word) - 1  # Does not need to predict SOS
+        x[i, :word_len] = word[:-1]
+        y[i, :word_len] = word[1:]
 
     x, y = x.to(device=constants.device), y.to(device=constants.device)
-    if len(batch[0]) == 3:
-        # return the index in training
-        index = torch.Tensor([b[2] for b in batch])
-        index = index.to(device=constants.device)
-        return x, y, index
-
-    weights = torch.cat([entry[1] for entry in batch])
-    weights = weights.to(device=constants.device)
-    return x, y, weights
+    indices = torch.Tensor([b[2] for b in batch]).to(device=constants.device)
+    weights = torch.cat([b[1] for b in batch]).to(device=constants.device)
+    return x, y, weights, indices
 
 
 def get_data_cls(data_type):

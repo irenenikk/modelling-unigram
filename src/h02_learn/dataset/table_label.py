@@ -22,4 +22,5 @@ class TableLabelDataset(Dataset):
         word_indices = torch.LongTensor([self.alphabet.char2idx('SOS')] + \
                                         self.alphabet.word2idx(word) + \
                                         [self.alphabet.char2idx('EOS')])
-        return (word_indices, None, index)
+        weight = torch.Tensor([1])
+        return (word_indices, weight, index)

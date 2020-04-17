@@ -55,7 +55,7 @@ class Adaptor:
     def calculate_cross_entropy(self, dataloader, generator):
         entropy = 0
         total_tokens = 0
-        for x, y, weights in tqdm(dataloader, total=len(dataloader), \
+        for x, y, weights, _ in tqdm(dataloader, total=len(dataloader), \
                                     desc='Calculating adaptor cross entropy', mininterval=.2):
             generator_logprobs = generator.get_word_log_probability(x, y)
             for i, log_prob in enumerate(generator_logprobs):
@@ -84,7 +84,7 @@ class Adaptor:
 
     def count_customers_in_tables_with_label(self):
         c_in_tables_with_label = defaultdict(int)
-        for x, _, _ in self.token_dataloader:
+        for x, _, _, _ in self.token_dataloader:
             for word_indices in x:
                 word = ''.join(self.state['alphabet'].idx2word(word_indices[1:]))
                 c_in_tables_with_label[word] = sum([self.state['customers_per_table'][table_id] \
@@ -124,7 +124,7 @@ class Adaptor:
         return table_logprobs
 
     def fit(self, generator):
-        for x, y, token_ids in tqdm(self.token_dataloader, total=len(self.token_dataloader), \
+        for x, y, _, token_ids in tqdm(self.token_dataloader, total=len(self.token_dataloader), \
                                     desc='Fitting adaptor', mininterval=.2):
             tokens_logprobs = generator.get_word_log_probability(x, y)
             # iterate through tokens in batch:

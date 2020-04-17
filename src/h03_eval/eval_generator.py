@@ -27,7 +27,7 @@ def _evaluate(evalloader, model, alphabet):
         .to(device=constants.device)
 
     dev_loss, n_instances = 0, 0
-    for x, y, weights in evalloader:
+    for x, y, weights, _ in evalloader:
         y_hat = model(x)
         loss = criterion(y_hat.reshape(-1, y_hat.shape[-1]), y.reshape(-1))\
             .reshape_as(y).sum(-1)
