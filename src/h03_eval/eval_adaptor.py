@@ -4,7 +4,7 @@ import torch
 
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds
-from h02_learn.train_pitman_yor import load_generator
+from h02_learn.train import load_generator
 from h02_learn.adaptor import Adaptor
 from util import constants, argparser
 

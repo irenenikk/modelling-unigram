@@ -6,9 +6,10 @@ import time
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
 from h02_learn.model import LstmLM
-from h02_learn.train import train, save_checkpoints
+from h02_learn.train import train, save_checkpoints, load_generator
 from h02_learn.dataset.table_label import TableLabelDataset
 from h03_eval.eval_generator import evaluate_generator
+from h03_eval.eval_adaptor import evaluate_adaptor
 from util import constants, argparser
 from util import util
 from h02_learn.adaptor import Adaptor
@@ -29,7 +30,7 @@ def get_args():
     # adaptor
     argparser.add_argument('--alpha', type=float, required=True)
     argparser.add_argument('--beta', type=float, required=True)
-    argparser.add_argument('--adaptor-iterations', type=int, default=10)
+    argparser.add_argument('--adaptor-iterations', type=int, default=6)
     argparser.add_argument('--adaptor-state-file', type=str, required=True)
     argparser.add_argument('--load-adaptor-init-state', default=False, action='store_true')
     args = argparser.parse_args()
@@ -41,11 +42,6 @@ def get_model(alphabet, args):
         len(alphabet), args.embedding_size, args.hidden_size,
         nlayers=args.nlayers, dropout=args.dropout, ignore_index=alphabet.char2idx('PAD')) \
         .to(device=constants.device)
-
-def load_generator(alphabet, checkpoints_path):
-    generator = LstmLM.load(checkpoints_path)
-    generator.ignore_index = alphabet.char2idx('PAD')
-    return generator
 
 def train_with_pitman_yor(trainloader, devloader, alphabet, epochs, training_args):
     generator = load_generator(alphabet, training_args['generator_path'])

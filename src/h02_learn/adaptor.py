@@ -7,8 +7,8 @@ from util.util import hacked_exp, write_data, read_data
 
 class Adaptor:
     def __init__(self, alpha, beta, alphabet, dataloader, state_filename, load_state=False, save_state=True):
+        self.saved_state_file = state_filename
         self.state = {}
-        self.state['saved_state_file'] = state_filename
         # initialise mapping from table index to n.o. customers
         # int --> int
         self.state['customers_per_table'] = defaultdict(int)
@@ -31,6 +31,7 @@ class Adaptor:
             self.set_adaptor_state()
         self.token_dataloader = dataloader
         self.state['alphabet'] = alphabet
+        self.state['dataset_length'] = len(dataloader.dataset)
         print('Token data length in adaptor', len(self.token_dataloader))
 
     def set_adaptor_state(self):

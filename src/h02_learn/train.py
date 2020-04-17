@@ -24,6 +24,10 @@ def get_args():
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
 
+def load_generator(alphabet, checkpoints_path):
+    generator = LstmLM.load(checkpoints_path)
+    generator.ignore_index = alphabet.char2idx('PAD')
+    return generator
 
 def get_model(alphabet_size, args):
     return LstmLM(
@@ -107,7 +111,7 @@ def main():
     print('Final Training loss: %.4f Dev loss: %.4f ' %
           (train_loss, dev_loss))
 
-    save_checkpoints(model, train_loss, dev_loss, trainset_size, len(devloader.dataset), args.checkpoints_path)
+    save_checkpoints(model, train_loss, dev_loss, trainset_size, len(devloader.dataset), args.generator_path)
 
 if __name__ == '__main__':
     main()
