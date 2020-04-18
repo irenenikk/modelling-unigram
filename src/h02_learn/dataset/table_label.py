@@ -8,12 +8,11 @@ class TableLabelDataset(Dataset):
     def __init__(self, tables_with_word_labels, alphabet):
         # maps a token to the indices having it as the label
         self.alphabet = alphabet
-        tables_with_word_labels = tables_with_word_labels
         self.dampened_tokens = []
         for token, tables in tables_with_word_labels.items():
             self.dampened_tokens += [token] * len(tables)
         print('Created a table label dataset of size', len(self.dampened_tokens))
-        
+
     def __len__(self):
         return len(self.dampened_tokens)
 

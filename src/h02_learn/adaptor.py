@@ -1,4 +1,3 @@
-import os
 from collections import defaultdict
 import torch
 import numpy as np
@@ -6,7 +5,8 @@ from tqdm import tqdm
 from util.util import hacked_exp, write_data, read_data
 
 class Adaptor:
-    def __init__(self, alpha, beta, alphabet, dataloader, state_filename, load_state=False, save_state=True):
+    def __init__(self, alpha, beta, alphabet, dataloader,\
+                    state_filename, load_state=False, save_state=True):
         self.saved_state_file = state_filename
         self.state = {}
         # initialise mapping from table index to n.o. customers
@@ -28,11 +28,20 @@ class Adaptor:
         self.state['beta'] = torch.Tensor([beta])
         self.save_state = save_state
         if load_state:
-            self.load_fitted_adaptor()
+            self.load_adaptor_state()
         self.token_dataloader = dataloader
         self.state['alphabet'] = alphabet
         self.state['dataset_length'] = len(dataloader.dataset)
         print('Token data length in adaptor', len(self.token_dataloader))
+
+    def load_adaptor_state(self):
+        try:
+            self.load_fitted_adaptor()
+        except FileNotFoundError:
+            print('Could not load adaptor state')
+
+    def set_state(self, state):
+        self.state = state
 
     def _sample_new_table_assignment(self, table_probs):
         probs, ids = zip(*table_probs)
@@ -109,11 +118,12 @@ class Adaptor:
         table_logprobs = []
         # calculate probability of assigning to old table
         for table_id in self.state['tables_with_word_label'][token]:
-            table_prob = torch.log(self.state['customers_per_table'][table_id] - self.state['alpha'])
+            table_prob = torch.log(self.state['customers_per_table'][table_id]\
+                                        - self.state['alpha'])
             table_logprobs.append((table_prob.item(), table_id))
         # calculate probability of assigning to new table
-        new_table_logprob = torch.log(torch.Tensor([self.state['total_tables']*self.state['alpha'] + self.state['beta']])) + \
-                            token_logprob
+        new_table_logprob = torch.log(torch.Tensor([self.state['total_tables']*self.state['alpha']+\
+                                                        self.state['beta']])) + token_logprob
         table_logprobs.append((new_table_logprob.item(), -1))
         return table_logprobs
 

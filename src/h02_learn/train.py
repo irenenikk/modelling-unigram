@@ -91,27 +91,29 @@ def main():
     args = get_args()
     folds = [list(range(8)), [8], [9]]
 
-    trainloader, devloader, testloader, alphabet = \
-        get_data_loaders_with_folds(args.dataset, args.data_file, folds, args.batch_size, args.train_num)
-        
+    trainloader, devloader, alphabet = \
+        get_data_loaders_with_folds(args.dataset, args.data_file, folds,\
+                                        args.batch_size, args.train_num)
+
     trainset_size = len(trainloader.dataset)
     if args.train_num is not None and args.train_num < trainset_size:
         trainset_size = args.train_num
 
+    devset_size = len(devloader.dataset)
     print('Train size: %d Dev size: %d ' %
-          (trainset_size, len(devloader.dataset)))
+          (trainset_size, devset_size))
 
     model = get_model(len(alphabet), args)
     train(trainloader, devloader, model, alphabet, args.eval_batches, args.wait_iterations)
 
     train_loss = evaluate_generator(trainloader, model, alphabet)
     dev_loss = evaluate_generator(devloader, model, alphabet)
-    test_loss = evaluate_generator(testloader, model, alphabet)
 
     print('Final Training loss: %.4f Dev loss: %.4f ' %
           (train_loss, dev_loss))
 
-    save_checkpoints(model, train_loss, dev_loss, trainset_size, len(devloader.dataset), args.generator_path)
+    save_checkpoints(model, train_loss, dev_loss, trainset_size,\
+                        devset_size, args.generator_path)
 
 if __name__ == '__main__':
     main()

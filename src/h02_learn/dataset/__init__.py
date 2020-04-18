@@ -71,7 +71,7 @@ def get_data_loader_with_folds(dataset_cls, data, folds, batch_size, shuffle, sa
                                 sampler=SubsetRandomSampler(indices))
 
 
-def get_data_loaders_with_folds(data_type, fname, folds, batch_size, train_n=None):
+def get_data_loaders_with_folds(data_type, fname, folds, batch_size, train_n=None, test=False):
     dataset_cls = get_data_cls(data_type)
     data = load_data(fname)
     alphabet = get_alphabet(data)
@@ -79,6 +79,8 @@ def get_data_loaders_with_folds(data_type, fname, folds, batch_size, train_n=Non
                                             batch_size=batch_size, shuffle=True, sample=train_n)
     devloader = get_data_loader_with_folds(dataset_cls, data, folds[1],\
                                             batch_size=batch_size, shuffle=False)
-    testloader = get_data_loader_with_folds(dataset_cls, data, folds[2],\
-                                            batch_size=batch_size, shuffle=False)
-    return trainloader, devloader, testloader, alphabet
+    if test:    
+        testloader = get_data_loader_with_folds(dataset_cls, data, folds[2],\
+                                                batch_size=batch_size, shuffle=False)
+        return trainloader, devloader, testloader, alphabet
+    return trainloader, devloader, alphabet

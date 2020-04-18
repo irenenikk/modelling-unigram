@@ -35,10 +35,7 @@ class BaseDataset(Dataset, ABC):
         return self.eval_instances
 
     def __getitem__(self, index):
-        try:
-            word = self.word_train[index] if self._train else self.word_eval[index]
-        except:
-            import ipdb; ipdb.set_trace()
+        word = self.word_train[index] if self._train else self.word_eval[index]
         weight = torch.Tensor([1]) if self._train else self.weights[index]
         return (word, weight, index)
 

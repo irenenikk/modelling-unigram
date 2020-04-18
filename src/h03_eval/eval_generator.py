@@ -76,7 +76,8 @@ def main():
     model_paths = util.get_dirs(args.eval_path)
 
     dataloaders = {
-        dataset: get_data_loaders_with_folds(dataset, args.data_file, folds, args.batch_size)
+        dataset: get_data_loaders_with_folds(dataset, args.data_file, folds,\
+                                                args.batch_size, test=True)
         for dataset in datasets
     }
     for dataset, dataloader in dataloaders.items():

@@ -67,6 +67,3 @@ def hacked_exp(x):
     maxim = x.max()
     y = np.exp(x - maxim)
     return y / y.sum()
-
-def parse_string_to_list(list_as_string):
-    return map(float, list_as_string.strip('[]').split(','))
