@@ -18,9 +18,6 @@ def add_generator_args(parser):
     parser.add_argument('--hidden-size', type=int, default=512)
     parser.add_argument('--dropout', type=float, default=.33)
 
-def add_adaptor_args(parser):
-
-
 def add_argument(*args, **kwargs):
     return parser.add_argument(*args, **kwargs)
 

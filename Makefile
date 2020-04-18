@@ -8,6 +8,8 @@ CHECKPOINT_DIR_BASE := ./checkpoint
 CHECKPOINT_DIR_LANG := $(CHECKPOINT_DIR_BASE)/$(LANGUAGE)
 RESULTS_DIR_BASE := ./results
 RESULTS_DIR_LANG := $(RESULTS_DIR_BASE)/$(LANGUAGE)
+TWO_STAGE_TOKEN_TRAINING := run_two_stage_token_training
+TWO_STAGE_TYPE_TRAINING := run_two_stage_type_training
 
 XML_NAME := $(LANGUAGE)wiki-latest-pages-articles.xml.bz2
 WIKIURL := https://dumps.wikimedia.org/$(LANGUAGE)wiki/latest/$(XML_NAME)
@@ -40,7 +42,7 @@ two_stage: $(ADAPTOR_TYPE_RESULTS_FILE) $(ADAPTOR_TOKEN_RESULTS_FILE)
 eval: $(RESULTS_FILE)
 	echo "Finished evaluating model" $(LANGUAGE)
 
-train: $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
+train: $(TWO_STAGE_TOKEN_TRAINING) $(TWO_STAGE_TYPE_TRAINING)
 	echo "Finished training model" $(LANGUAGE)
 
 get_wiki: $(PROCESSED_DATA_FILE)
@@ -50,7 +52,7 @@ clean:
 	rm $(PROCESSED_DATA_FILE)
 
 # Train two-stage model initialising with types
-$(ADAPTOR_TYPE_RESULTS_FILE): $(CHECKPOINT_TYPE_FILE)
+$(TWO_STAGE_TYPE_TRAINING): $(CHECKPOINT_TYPE_FILE)
 	echo "Train two-stage model" $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)_retrained
@@ -59,7 +61,7 @@ $(ADAPTOR_TYPE_RESULTS_FILE): $(CHECKPOINT_TYPE_FILE)
 			--adaptor-results-file $(ADAPTOR_TYPE_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_NUM)
 
 # Train two-stage model initialising with tokens
-$(ADAPTOR_TOKEN_RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE)
+$(TWO_STAGE_TOKEN_TRAINING): $(CHECKPOINT_TOKEN_FILE)
 	echo "Train two-stage model" $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)_retrained
