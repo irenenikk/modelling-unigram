@@ -28,14 +28,17 @@ class BaseDataset(Dataset, ABC):
                 [self.alphabet.char2idx('EOS')]
 
     def __len__(self):
+        if self.sample_size is not None:
+            return self.sample_size
         if self._train:
-            if self.sample_size is not None:
-                return self.sample_size
             return self.train_instances
         return self.eval_instances
 
     def __getitem__(self, index):
-        word = self.word_train[index] if self._train else self.word_eval[index]
+        try:
+            word = self.word_train[index] if self._train else self.word_eval[index]
+        except:
+            import ipdb; ipdb.set_trace()
         weight = torch.Tensor([1]) if self._train else self.weights[index]
         return (word, weight, index)
 

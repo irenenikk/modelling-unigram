@@ -15,7 +15,7 @@ from util import util
 from h02_learn.adaptor import Adaptor
 
 def get_args():
-    argparser.add_argument('--epochs', type=int, default=5)
+    argparser.add_argument('--epochs', type=int, default=1)
     # Data
     argparser.add_argument('--train-num', type=int, default=None)
     # Optimization
@@ -77,7 +77,7 @@ def build_training_args(args, save_adaptor_state):
     training_args['save_adaptor_state'] = save_adaptor_state
     return training_args
 
-def save_pitman_yor_training_results(model, args, train_loss, dev_loss, generator_dev_loss, generator_test_loss, training_time, train_size, dev_size):
+def save_pitman_yor_training_results(model, args, train_loss, dev_loss, generator_dev_loss, training_time, train_size, dev_size):
     results_fname = args.adaptor_results_file
     print('Saving to', results_fname)
     results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
@@ -115,7 +115,7 @@ def main():
     print('Getting generator dev loss')
     generator_dev_loss = evaluate_generator(devloader, generator, alphabet)
 
-    print('Generator Training loss: %.4f Dev loss: %.4f%' %
+    print('Generator Training loss: %.4f Dev loss: %.4f' %
           (generator_train_loss, generator_dev_loss))
 
     adaptor_train_loss = evaluate_adaptor(trainloader, generator, adaptor)

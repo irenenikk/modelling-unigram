@@ -1,7 +1,6 @@
 LANGUAGE := yo
 ALPHA := 0.5
 BETA := 1
-TRAIN_SAMPLES = $(TRAIN_NUM)
 DATA_DIR_BASE := ./data
 DATA_DIR_LANG := $(DATA_DIR_BASE)/$(LANGUAGE)
 WIKI_DIR := $(DATA_DIR_LANG)/wiki
@@ -57,7 +56,7 @@ $(ADAPTOR_TYPE_RESULTS_FILE): $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)_retrained
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset tokens \
-			--adaptor-results-file $(ADAPTOR_TYPE_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_SAMPLES)
+			--adaptor-results-file $(ADAPTOR_TYPE_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_NUM)
 
 # Train two-stage model initialising with tokens
 $(ADAPTOR_TOKEN_RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE)
@@ -66,7 +65,7 @@ $(ADAPTOR_TOKEN_RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)_retrained
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens \
-			--adaptor-results-file $(ADAPTOR_TOKEN_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_SAMPLES)
+			--adaptor-results-file $(ADAPTOR_TOKEN_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_NUM)
 
 # Eval language models
 $(RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
@@ -78,13 +77,13 @@ $(RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
 $(CHECKPOINT_TOKEN_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train tokens model" $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)
-	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens --train-num $(TRAIN_SAMPLES)
+	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens --train-num $(TRAIN_NUM)
 
 # Train types model
 $(CHECKPOINT_TYPE_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train types model" $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)
-	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset types --train-num $(TRAIN_SAMPLES)
+	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset types --train-num $(TRAIN_NUM)
 
 # Preprocess Data
 $(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)

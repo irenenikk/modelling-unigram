@@ -28,17 +28,11 @@ class Adaptor:
         self.state['beta'] = torch.Tensor([beta])
         self.save_state = save_state
         if load_state:
-            self.set_adaptor_state()
+            self.load_fitted_adaptor()
         self.token_dataloader = dataloader
         self.state['alphabet'] = alphabet
         self.state['dataset_length'] = len(dataloader.dataset)
         print('Token data length in adaptor', len(self.token_dataloader))
-
-    def set_adaptor_state(self):
-        try:
-            self.load_fitted_adaptor()
-        except:
-            print('Could not load adaptor state')
 
     def _sample_new_table_assignment(self, table_probs):
         probs, ids = zip(*table_probs)
