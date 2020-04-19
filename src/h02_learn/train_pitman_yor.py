@@ -94,6 +94,7 @@ def save_pitman_yor_training_results(model, args, train_loss, dev_loss, generato
                                         training_time, train_size, dev_size):
     results_fname = args.adaptor_results_file
     print('Saving to', results_fname)
+    # TODO: check if file already has content and only save headers if is empty
     results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
                 'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss',\
                 'generator_dev_losss', 'total_epochs', 'adaptor_iterations',\

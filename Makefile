@@ -29,17 +29,17 @@ UNDERSCORE:= _
 STRING_ALPHA = $(subst $(DOT),$(UNDERSCORE),$(ALPHA))
 STRING_BETA = $(subst $(DOT),$(UNDERSCORE),$(BETA))
 ADAPTOR_STATE_FILE := $(CHECKPOINT_DIR_LANG)/adaptor_state_file_$(STRING_ALPHA)_$(STRING_BETA)
-RESULTS_FILE := $(RESULTS_DIR_LANG)/lstm_results.csv
+GENERATOR_RESULTS_FILE := $(RESULTS_DIR_LANG)/lstm_results.csv
 ADAPTOR_TOKEN_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_results_token_init.csv
 ADAPTOR_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_results_type_init.csv
 
 
-all: get_wiki train eval two_stage
+all: get_wiki train two_stage eval_generator
 
 two_stage: $(ADAPTOR_TYPE_RESULTS_FILE) $(ADAPTOR_TOKEN_RESULTS_FILE)
 	echo "Finished training two-stage model" $(LANGUAGE)
 
-eval: $(RESULTS_FILE)
+eval_generator: $(GENERATOR_RESULTS_FILE)
 	echo "Finished evaluating model" $(LANGUAGE)
 
 train: $(TWO_STAGE_TOKEN_TRAINING) $(TWO_STAGE_TYPE_TRAINING)
@@ -50,6 +50,12 @@ get_wiki: $(PROCESSED_DATA_FILE)
 
 clean:
 	rm $(PROCESSED_DATA_FILE)
+
+# Eval language models
+$(GENERATOR_RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
+	echo "Eval models" $(GENERATOR_RESULTS_FILE)
+	mkdir -p $(RESULTS_DIR_LANG)
+	python src/h03_eval/eval_generator.py --data-file $(PROCESSED_DATA_FILE) --eval-path $(CHECKPOINT_DIR_LANG) --results-file $(GENERATOR_RESULTS_FILE) --dataset tokens
 
 # Train two-stage model initialising with types
 $(TWO_STAGE_TYPE_TRAINING): $(CHECKPOINT_TYPE_FILE)
@@ -68,13 +74,6 @@ $(TWO_STAGE_TOKEN_TRAINING): $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens \
 			--adaptor-results-file $(ADAPTOR_TOKEN_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_NUM)
-
-# Eval language models
-$(RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
-	echo "Eval models" $(RESULTS_FILE)
-	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h03_eval/eval_generator.py --data-file $(PROCESSED_DATA_FILE) --eval-path $(CHECKPOINT_DIR_LANG) --results-file $(RESULTS_FILE) --dataset tokens
-
 # Train tokens model
 $(CHECKPOINT_TOKEN_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train tokens model" $(CHECKPOINT_TOKEN_FILE)

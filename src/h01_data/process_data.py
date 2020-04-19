@@ -41,6 +41,9 @@ def get_fold_splits(n_sentences, n_folds, max_sentences=None):
 
 def process_line(line, word_info, alphabet):
     for word in line.strip().split(' '):
+        # exclude words that contain non-letters
+        if not word.isalpha():
+            continue
         alphabet.add_word(word)
 
         if word in word_info:
