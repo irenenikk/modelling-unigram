@@ -1,5 +1,6 @@
 import time
 import sys
+import os
 
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
@@ -94,11 +95,13 @@ def save_pitman_yor_training_results(model, args, train_loss, dev_loss, generato
                                         training_time, train_size, dev_size):
     results_fname = args.adaptor_results_file
     print('Saving to', results_fname)
-    # TODO: check if file already has content and only save headers if is empty
-    results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
-                'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss',\
-                'generator_dev_losss', 'total_epochs', 'adaptor_iterations',\
-                'training_time', 'train_size', 'dev_size']]
+    results = []
+    file_size = os.path.getsize(results_fname)
+    if file_size == 0:
+        results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
+                    'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss',\
+                    'generator_dev_losss', 'total_epochs', 'adaptor_iterations',\
+                    'training_time', 'train_size', 'dev_size']]
     results += [[model.alphabet_size, model.embedding_size, model.hidden_size, model.nlayers,\
                 model.dropout_p, args.alpha, args.beta, train_loss, dev_loss,\
                 generator_dev_loss, args.epochs, args.adaptor_iterations,\

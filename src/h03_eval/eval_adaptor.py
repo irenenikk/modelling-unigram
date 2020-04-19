@@ -33,8 +33,11 @@ def evaluate_adaptor(dataloader, generator, adaptor):
 def save_pitman_yor_results(model, alpha, beta, train_loss, dev_loss, test_loss, test_size):
     results_fname = args.adaptor_results_file
     print('Saving to', results_fname)
-    results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
-                'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss', 'test_loss', 'test_size']]
+    results = []
+    file_size = os.path.getsize(results_fname)
+    if file_size == 0:
+        results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
+                    'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss', 'test_loss', 'test_size']]
     results += [[model.alphabet_size, model.embedding_size, model.hidden_size, model.nlayers,\
                 model.dropout_p, alpha, beta, train_loss, dev_loss, test_loss, test_size]]
     util.write_csv(results_fname, results)
