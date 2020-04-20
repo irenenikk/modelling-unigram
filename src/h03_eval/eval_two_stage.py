@@ -34,7 +34,7 @@ def save_pitman_yor_results(model, alpha, beta, train_loss, dev_loss, test_loss,
     results_fname = args.adaptor_results_file
     print('Saving to', results_fname)
     results = []
-    file_size = os.path.getsize(results_fname)
+    file_size = os.path.getsize(results_fname) if os.path.exists(results_fname) else 0
     if file_size == 0:
         results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
                     'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss', 'test_loss', 'test_size']]

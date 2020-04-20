@@ -8,8 +8,12 @@ CHECKPOINT_DIR_BASE := ./checkpoint
 CHECKPOINT_DIR_LANG := $(CHECKPOINT_DIR_BASE)/$(LANGUAGE)
 RESULTS_DIR_BASE := ./results
 RESULTS_DIR_LANG := $(RESULTS_DIR_BASE)/$(LANGUAGE)
+# these files don't exist, so that two stage training and evaluation
+# are triggered each time the makefile script is run
 TWO_STAGE_TOKEN_TRAINING := run_two_stage_token_training
 TWO_STAGE_TYPE_TRAINING := run_two_stage_type_training
+TWO_STAGE_TOKEN_EVALUATION := run_two_stage_token_evaluation
+TWO_STAGE_TYPE_EVALUATION := run_two_stage_type_evaluation
 
 XML_NAME := $(LANGUAGE)wiki-latest-pages-articles.xml.bz2
 WIKIURL := https://dumps.wikimedia.org/$(LANGUAGE)wiki/latest/$(XML_NAME)
@@ -30,19 +34,24 @@ STRING_ALPHA = $(subst $(DOT),$(UNDERSCORE),$(ALPHA))
 STRING_BETA = $(subst $(DOT),$(UNDERSCORE),$(BETA))
 ADAPTOR_STATE_FILE := $(CHECKPOINT_DIR_LANG)/adaptor_state_file_$(STRING_ALPHA)_$(STRING_BETA)
 GENERATOR_RESULTS_FILE := $(RESULTS_DIR_LANG)/lstm_results.csv
-ADAPTOR_TOKEN_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_results_token_init.csv
-ADAPTOR_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_results_type_init.csv
+TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_training_results_token_init.csv
+TWO_STAGE_TYPE_TRAINING_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_training_results_type_init.csv
+TWO_STAGE_TOKEN_EVALUATION_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluation_results_token_init.csv
+TWO_STAGE_TYPE_EVALUATION_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluation_results_type_init.csv
 
 
 all: get_wiki train two_stage eval_generator
 
-two_stage: $(ADAPTOR_TYPE_RESULTS_FILE) $(ADAPTOR_TOKEN_RESULTS_FILE)
+two_stage: $(TWO_STAGE_TOKEN_TRAINING) $(TWO_STAGE_TYPE_TRAINING)
 	echo "Finished training two-stage model" $(LANGUAGE)
 
 eval_generator: $(GENERATOR_RESULTS_FILE)
 	echo "Finished evaluating model" $(LANGUAGE)
 
-train: $(TWO_STAGE_TOKEN_TRAINING) $(TWO_STAGE_TYPE_TRAINING)
+eval_two_stage: $(TWO_STAGE_TOKEN_EVALUATION) $(TWO_STAGE_TYPE_EVALUATION)
+	echo "Finished evaluating model" $(LANGUAGE)
+
+train: $(CHECKPOINT_TYPE_FILE) $(CHECKPOINT_TOKEN_FILE)
 	echo "Finished training model" $(LANGUAGE)
 
 get_wiki: $(PROCESSED_DATA_FILE)
@@ -51,11 +60,24 @@ get_wiki: $(PROCESSED_DATA_FILE)
 clean:
 	rm $(PROCESSED_DATA_FILE)
 
+
+# Eval two-stage model
+$(TWO_STAGE_TYPE_EVALUATION): $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
+	echo "Eval models" $(GENERATOR_RESULTS_FILE)
+	mkdir -p $(RESULTS_DIR_LANG)
+	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --eval-path $(CHECKPOINT_DIR_LANG) --results-file $(TWO_STAGE_TYPE_EVALUATION_RESULTS_FILE) --batch-size 64 --dataset types
+
+# Eval two-stage model
+$(TWO_STAGE_TOKEN_EVALUATION): $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
+	echo "Eval models" $(GENERATOR_RESULTS_FILE)
+	mkdir -p $(RESULTS_DIR_LANG)
+	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --eval-path $(CHECKPOINT_DIR_LANG) --results-file $(TWO_STAGE_TOKEN_EVALUATION_RESULTS_FILE) --batch-size 64 --dataset tokens
+
 # Eval language models
 $(GENERATOR_RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
 	echo "Eval models" $(GENERATOR_RESULTS_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h03_eval/eval_generator.py --data-file $(PROCESSED_DATA_FILE) --eval-path $(CHECKPOINT_DIR_LANG) --results-file $(GENERATOR_RESULTS_FILE) --dataset tokens
+	python src/h03_eval/eval_generator.py --data-file $(PROCESSED_DATA_FILE) --eval-path $(CHECKPOINT_DIR_LANG) --results-file $(GENERATOR_RESULTS_FILE) --batch-size 64 --dataset tokens
 
 # Train two-stage model initialising with types
 $(TWO_STAGE_TYPE_TRAINING): $(CHECKPOINT_TYPE_FILE)
@@ -64,7 +86,7 @@ $(TWO_STAGE_TYPE_TRAINING): $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)_retrained
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset tokens \
-			--adaptor-results-file $(ADAPTOR_TYPE_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_NUM)
+			--adaptor-results-file $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_NUM)
 
 # Train two-stage model initialising with tokens
 $(TWO_STAGE_TOKEN_TRAINING): $(CHECKPOINT_TOKEN_FILE)
@@ -73,7 +95,7 @@ $(TWO_STAGE_TOKEN_TRAINING): $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)_retrained
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens \
-			--adaptor-results-file $(ADAPTOR_TOKEN_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_NUM)
+			--adaptor-results-file $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_NUM)
 # Train tokens model
 $(CHECKPOINT_TOKEN_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train tokens model" $(CHECKPOINT_TOKEN_FILE)

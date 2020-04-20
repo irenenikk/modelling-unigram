@@ -51,7 +51,7 @@ def tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas):
                 best_loss = adaptor_dev_loss
                 best_params = (alpha, beta)
                 print('Saving adaptor state to', args.adaptor_state_file)
-                adaptor.save_fitted_adaptor(args.adaptor_state_file)
+                adaptor.save_fitted_state(args.adaptor_state_file)
             adaptor_train_loss = evaluate_adaptor(trainloader, generator, adaptor)
             tuning_results += construct_pitman_yor_tuning_results(generator, alpha, beta, adaptor_train_loss, adaptor_dev_loss)
     print('Best loss', best_loss, 'obtained with (a, b) =', best_params)

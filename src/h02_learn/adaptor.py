@@ -94,7 +94,7 @@ class Adaptor:
                                         for table_id in self.state['tables_with_word_label'][word]])
         return c_in_tables_with_label
 
-    def save_fitted_adaptor(self, state_filename=None):
+    def save_fitted_state(self, state_filename=None):
         customers_in_tables_with_label = self.count_customers_in_tables_with_label()
         self.state['customers_in_tables_with_label'] = customers_in_tables_with_label
         saved_state_filename = state_filename
@@ -155,6 +155,6 @@ class Adaptor:
                 self.state['table_assignments'][token_id] = assigned_table_id
         if self.save_state:
             print('Saving adaptor state to', self.saved_state_file)
-            self.save_fitted_adaptor()
+            self.save_fitted_state()
         print('Done fitting the adaptor')
         return self.state['tables_with_word_label']

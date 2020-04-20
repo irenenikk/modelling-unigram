@@ -9,7 +9,7 @@ from h02_learn.train import train, save_checkpoints, load_generator
 from h02_learn.dataset.table_label import TableLabelDataset
 from h02_learn.adaptor import Adaptor
 from h03_eval.eval_generator import evaluate_generator
-from h03_eval.eval_adaptor import evaluate_adaptor
+from h03_eval.eval_two_stage import evaluate_adaptor
 from util import constants, argparser
 from util import util
 
@@ -57,6 +57,7 @@ def train_adaptor(adaptor, generator, devloader, adaptor_iterations):
 
 def train_generator(generator, tables_with_word_labels, devloader, training_args, alphabet):
     # use the dataset defined by the adaptor if present
+    generator.train()
     tables_with_word_labels_dataset = TableLabelDataset(tables_with_word_labels, alphabet)
     table_label_dataloader = get_data_loader(tables_with_word_labels_dataset,\
                                                 training_args['batch_size'])
@@ -68,7 +69,6 @@ def train_generator(generator, tables_with_word_labels, devloader, training_args
 
 def train_with_pitman_yor(trainloader, devloader, alphabet, epochs, training_args):
     generator = load_generator(alphabet, training_args['generator_path'])
-    generator.train()
     adaptor = Adaptor(training_args['alpha'], training_args['beta'], alphabet, trainloader,\
                         state_filename=training_args['adaptor_state_file'],\
                         load_state=training_args['load_adaptor_init_state'],\
@@ -96,7 +96,7 @@ def save_pitman_yor_training_results(model, args, train_loss, dev_loss, generato
     results_fname = args.adaptor_results_file
     print('Saving to', results_fname)
     results = []
-    file_size = os.path.getsize(results_fname)
+    file_size = os.path.getsize(results_fname) if os.path.exists(results_fname) else 0
     if file_size == 0:
         results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
                     'dropout_p', 'alpha', 'beta', 'train_loss', 'dev_loss',\
