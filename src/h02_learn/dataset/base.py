@@ -28,9 +28,9 @@ class BaseDataset(Dataset, ABC):
                 [self.alphabet.char2idx('EOS')]
 
     def __len__(self):
-        if self.sample_size is not None:
-            return self.sample_size
         if self._train:
+            if self.sample_size is not None:
+                return self.sample_size
             return self.train_instances
         return self.eval_instances
 
