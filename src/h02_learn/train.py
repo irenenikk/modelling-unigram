@@ -39,17 +39,16 @@ def get_model(alphabet_size, args):
 def train_batch(x, y, model, optimizer, criterion):
     optimizer.zero_grad()
     y_hat = model(x)
-    loss = criterion(y_hat.reshape(-1, y_hat.shape[-1]), y.reshape(-1))
+    loss = criterion(y_hat.reshape(-1, y_hat.shape[-1]), y.reshape(-1)).sum(-1)
     loss.backward()
     optimizer.step()
-
     return loss.item()
 
 
 def train(trainloader, devloader, model, alphabet, eval_batches, wait_iterations):
     # optimizer = optim.AdamW(model.parameters())
     optimizer = optim.Adam(model.parameters())
-    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD')) \
+    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD'), reduction='none') \
         .to(device=constants.device)
     train_info = TrainInfo(wait_iterations, eval_batches)
 
@@ -73,10 +72,11 @@ def train(trainloader, devloader, model, alphabet, eval_batches, wait_iterations
 
 
 def save_results(model, train_loss, dev_loss, train_size, dev_size, results_fname):
-    results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',
-                'dropout_p', 'train_loss', 'dev_loss', 'train_size', 'dev_size']]
-    results += [[model.alphabet_size, model.embedding_size, model.hidden_size,
-                 model.nlayers, model.dropout_p, train_loss, dev_loss,
+    results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers',\
+                'dropout_p', 'train_loss', 'dev_loss',\
+                'train_size', 'dev_size']]
+    results += [[model.alphabet_size, model.embedding_size, model.hidden_size,\
+                 model.nlayers, model.dropout_p, train_loss, dev_loss,\
                  train_size, dev_size]]
     util.write_csv(results_fname, results)
 
