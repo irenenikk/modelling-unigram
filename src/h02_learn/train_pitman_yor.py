@@ -5,7 +5,7 @@ import os
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
 from h02_learn.model import LstmLM
-from h02_learn.train import train, save_checkpoints, load_generator
+from h02_learn.train import train, load_generator
 from h02_learn.dataset.table_label import TableLabelDataset
 from h02_learn.adaptor import Adaptor
 from h03_eval.eval_generator import evaluate_generator
@@ -15,8 +15,6 @@ from util import util
 
 def get_args():
     argparser.add_argument('--epochs', type=int, default=1)
-    # Data
-    argparser.add_argument('--train-num', type=int, default=None)
     # Optimization
     argparser.add_argument('--eval-batches', type=int, default=200)
     argparser.add_argument('--wait-epochs', type=int, default=5)
@@ -114,11 +112,7 @@ def main():
 
     trainloader, devloader, alphabet = \
         get_data_loaders_with_folds(args.dataset, args.data_file, folds,\
-                                        args.batch_size, args.train_num)
-
-    trainset_size = len(trainloader.dataset)
-    if args.train_num is not None and args.train_num < trainset_size:
-        trainset_size = args.train_num
+                                        args.batch_size)
 
     print('Train size: %d Dev size: %d' %
           (len(trainloader.dataset), len(devloader.dataset)))

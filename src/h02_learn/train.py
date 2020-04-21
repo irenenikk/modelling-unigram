@@ -18,8 +18,6 @@ def get_args():
     argparser.add_argument('--wait-epochs', type=int, default=5)
     # Save
     argparser.add_argument('--generator-path', type=str)
-    # Data
-    argparser.add_argument('--train-num', type=int, default=None)
     args = argparser.parse_args()
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
@@ -94,15 +92,10 @@ def main():
 
     trainloader, devloader, alphabet = \
         get_data_loaders_with_folds(args.dataset, args.data_file, folds,\
-                                        args.batch_size, args.train_num)
+                                        args.batch_size)
 
-    trainset_size = len(trainloader.dataset)
-    if args.train_num is not None and args.train_num < trainset_size:
-        trainset_size = args.train_num
-
-    devset_size = len(devloader.dataset)
     print('Train size: %d Dev size: %d ' %
-          (trainset_size, devset_size))
+          (len(trainloader.dataset), len(devloader.dataset)))
 
     model = get_model(len(alphabet), args)
     train(trainloader, devloader, model, alphabet, args.eval_batches, args.wait_iterations)

@@ -1,10 +1,10 @@
 import torch
 import numpy as np
+from torch.utils.data import DataLoader
+from torch.utils.data.sampler import SubsetRandomSampler
 
 from util import constants
 from util import util
-from torch.utils.data import DataLoader
-from torch.utils.data.sampler import SubsetRandomSampler
 from .types import TypeDataset
 from .tokens import TokenDataset
 
@@ -62,24 +62,20 @@ def get_data_loader(dataset, batch_size, shuffle=True):
     return dataloader
 
 
-def get_data_loader_with_folds(dataset_cls, data, folds, batch_size, shuffle, sample=None):
-    trainset = dataset_cls(data, folds, sample)
-    if sample is None or sample >= len(trainset):
-        return DataLoader(trainset, batch_size=batch_size, shuffle=shuffle, collate_fn=generate_batch)
-    indices = np.random.permutation(len(trainset))[:sample]
-    return DataLoader(trainset, batch_size=batch_size, collate_fn=generate_batch,\
-                                sampler=SubsetRandomSampler(indices))
+def get_data_loader_with_folds(dataset_cls, data, folds, batch_size, shuffle):
+    trainset = dataset_cls(data, folds)
+    return DataLoader(trainset, batch_size=batch_size, shuffle=shuffle, collate_fn=generate_batch)
 
 
-def get_data_loaders_with_folds(data_type, fname, folds, batch_size, train_n=None, test=False):
+def get_data_loaders_with_folds(data_type, fname, folds, batch_size, test=False):
     dataset_cls = get_data_cls(data_type)
     data = load_data(fname)
     alphabet = get_alphabet(data)
     trainloader = get_data_loader_with_folds(dataset_cls, data, folds[0],\
-                                            batch_size=batch_size, shuffle=True, sample=train_n)
+                                            batch_size=batch_size, shuffle=True)
     devloader = get_data_loader_with_folds(dataset_cls, data, folds[1],\
                                             batch_size=batch_size, shuffle=False)
-    if test:    
+    if test:
         testloader = get_data_loader_with_folds(dataset_cls, data, folds[2],\
                                                 batch_size=batch_size, shuffle=False)
         return trainloader, devloader, testloader, alphabet

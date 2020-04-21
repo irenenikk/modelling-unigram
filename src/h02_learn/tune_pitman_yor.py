@@ -4,6 +4,7 @@ import numpy as np
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.train_pitman_yor import train_with_pitman_yor, build_training_args
+from h03_eval.eval_two_stage import evaluate_adaptor
 from util import argparser
 from util import util
 
@@ -63,7 +64,7 @@ def main():
 
     trainloader, devloader, alphabet = \
         get_data_loaders_with_folds(args.dataset, args.data_file, folds, args.batch_size)
-    print('Train size: %d Dev size' %
+    print('Train size: %d Dev size %d' %
           (len(trainloader.dataset), len(devloader.dataset)))
 
     beta_end = len(trainloader.dataset) * 10

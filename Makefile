@@ -22,7 +22,7 @@ JSON_NAME := wiki-latest.json.gz
 XML_FILE := $(WIKI_DIR)/$(XML_NAME)
 JSON_FILE := $(WIKI_DIR)/$(JSON_NAME)
 TOKENIZED_FILE := $(WIKI_DIR)/parsed.txt
-PROCESSED_DATA_FILE := $(DATA_DIR_LANG)/processed.pckl
+PROCESSED_DATA_FILE := $(DATA_DIR_LANG)/processed_$(TRAIN_NUM).pckl
 
 CHECKPOINT_TYPE_PATH := $(CHECKPOINT_DIR_LANG)/types
 CHECKPOINT_TYPE_FILE := $(CHECKPOINT_TYPE_PATH)/model.tch
@@ -51,7 +51,7 @@ eval_generator: $(GENERATOR_RESULTS_FILE)
 eval_two_stage: $(TWO_STAGE_TOKEN_EVALUATION) $(TWO_STAGE_TYPE_EVALUATION)
 	echo "Finished evaluating model" $(LANGUAGE)
 
-train: $(CHECKPOINT_TYPE_FILE) $(CHECKPOINT_TOKEN_FILE)
+train: $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
 	echo "Finished training model" $(LANGUAGE)
 
 get_wiki: $(PROCESSED_DATA_FILE)
@@ -86,7 +86,7 @@ $(TWO_STAGE_TYPE_TRAINING): $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)_retrained
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset tokens \
-			--adaptor-results-file $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_NUM)
+			--adaptor-results-file $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE)
 
 # Train two-stage model initialising with tokens
 $(TWO_STAGE_TOKEN_TRAINING): $(CHECKPOINT_TOKEN_FILE)
@@ -95,23 +95,24 @@ $(TWO_STAGE_TOKEN_TRAINING): $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)_retrained
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens \
-			--adaptor-results-file $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE) --train-num $(TRAIN_NUM)
+			--adaptor-results-file $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --adaptor-state-file $(ADAPTOR_STATE_FILE)
+
 # Train tokens model
 $(CHECKPOINT_TOKEN_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train tokens model" $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)
-	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens --train-num $(TRAIN_NUM)
+	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens
 
 # Train types model
 $(CHECKPOINT_TYPE_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train types model" $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)
-	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset types --train-num $(TRAIN_NUM)
+	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset types
 
 # Preprocess Data
 $(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)
 	echo "Process data"
-	python src/h01_data/process_data.py --wikipedia-tokenized-file $(TOKENIZED_FILE) --data-file $(PROCESSED_DATA_FILE)
+	python src/h01_data/process_data.py --wikipedia-tokenized-file $(TOKENIZED_FILE) --data-file $(PROCESSED_DATA_FILE) --sample-size $(TRAIN_NUM)
 
 # Tokenize wikipedia
 $(TOKENIZED_FILE): $(JSON_FILE)
