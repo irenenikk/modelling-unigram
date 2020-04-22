@@ -16,7 +16,7 @@ from util import util
 
 def get_args():
     argparser = get_argparser()
-    argparser.add_argument('--epochs', type=int, default=2)
+    argparser.add_argument('--epochs', type=int, default=10)
     # Data
     argparser.add_argument('--max-train-tokens', type=int)
     # Optimization
@@ -28,7 +28,7 @@ def get_args():
     # adaptor
     argparser.add_argument('--alpha', type=float, required=True)
     argparser.add_argument('--beta', type=float, required=True)
-    argparser.add_argument('--adaptor-iterations', type=int, default=1)
+    argparser.add_argument('--adaptor-iterations', type=int, default=6)
     argparser.add_argument('--two-stage-state-folder', type=str, required=True)
     argparser.add_argument('--load-adaptor-init-state', default=False, action='store_true')
     args = parse_args(argparser)
