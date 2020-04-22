@@ -4,7 +4,7 @@ import argparse
 from tqdm import tqdm
 import gensim.utils
 
-from tokenizer_model import Tokenizer, Sentencizer
+from h01_data.tokenizer_model import Tokenizer, Sentencizer
 
 
 def get_args():
