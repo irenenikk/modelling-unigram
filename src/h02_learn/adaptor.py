@@ -1,3 +1,5 @@
+import os
+
 from collections import defaultdict
 import torch
 import numpy as np
@@ -5,9 +7,10 @@ from tqdm import tqdm
 from util.util import hacked_exp, write_data, read_data
 
 class Adaptor:
-    def __init__(self, alpha, beta, alphabet, dataloader,\
-                    state_filename, load_state=False, save_state=True):
-        self.saved_state_file = state_filename
+    def __init__(self, alpha, beta, alphabet,\
+                    state_folder, save_state=True):
+        self.saved_state_folder = state_folder
+        self.save_state = save_state
         self.state = {}
         # initialise mapping from table index to n.o. customers
         # int --> int
@@ -26,19 +29,24 @@ class Adaptor:
         self.state['total_tables'] = 0
         self.state['alpha'] = torch.Tensor([alpha])
         self.state['beta'] = torch.Tensor([beta])
-        self.save_state = save_state
-        if load_state:
-            self.load_adaptor_state()
-        self.token_dataloader = dataloader
         self.state['alphabet'] = alphabet
-        self.state['dataset_length'] = len(dataloader.dataset)
-        print('Token data length in adaptor', len(self.token_dataloader))
 
-    def load_adaptor_state(self):
-        try:
-            self.load_fitted_adaptor()
-        except FileNotFoundError:
-            print('Could not load adaptor state')
+    def __init__(self, state, state_folder, save_state=True):
+        self.state = state
+        self.saved_state_folder = state_folder
+        self.save_state = save_state
+
+    @staticmethod
+    def get_state_file(saved_state_folder):
+        return os.path.join(saved_state_folder, 'adaptor_state')
+
+    @classmethod
+    def load(cls, state_folder):
+        state_file = cls.get_state_file(state_folder)
+        print('Loading fitted adaptor from', state_file)        
+        state = read_data(state_file)
+        adaptor = cls(state, state_folder)
+        return adaptor
 
     def set_state(self, state):
         self.state = state
@@ -71,6 +79,7 @@ class Adaptor:
         return (entropy / total_tokens).item()
 
     def get_token_probability(self, generator_logprob, token):
+        """ The marginal probability of a token defined by marginalising over table assignments as defined by Goldwater et al. """
         i = self.state['dataset_length']
         tables_with_word_label = self.state['tables_with_word_label'][token]
         customers_in_tables_with_label = self.state['customers_in_tables_with_label'][token]
@@ -85,26 +94,27 @@ class Adaptor:
         res = torch.log(state1 + state2*generator_prob)-torch.log(i+self.state['beta'])
         return res
 
-    def count_customers_in_tables_with_label(self):
+    def count_customers_in_tables_with_label(self, dataloader):
         c_in_tables_with_label = defaultdict(int)
-        for x, _, _, _ in self.token_dataloader:
+        for x, _, _, _ in dataloader:
             for word_indices in x:
                 word = ''.join(self.state['alphabet'].idx2word(word_indices[1:]))
                 c_in_tables_with_label[word] = sum([self.state['customers_per_table'][table_id] \
                                         for table_id in self.state['tables_with_word_label'][word]])
         return c_in_tables_with_label
 
-    def save_fitted_state(self, state_filename=None):
-        customers_in_tables_with_label = self.count_customers_in_tables_with_label()
+    def save_fitted_state(self, dataloader, state_folder=None):
+        customers_in_tables_with_label = self.count_customers_in_tables_with_label(dataloader)
         self.state['customers_in_tables_with_label'] = customers_in_tables_with_label
-        saved_state_filename = state_filename
-        if state_filename is None:
-            saved_state_filename = self.saved_state_file
-        write_data(saved_state_filename, self.state)
+        saved_state_folder = state_folder
+        if state_folder is None:
+            saved_state_folder = self.saved_state_folder
+        adaptor_state_file = self.get_state_file(self.saved_state_folder)
+        write_data(adaptor_state_file, self.state)
 
-    def load_fitted_adaptor(self):
-        print('Loading fitted adaptor from', self.saved_state_file)
-        self.state = read_data(self.saved_state_file)
+    def load_fitted_adaptor(saved_state_folder):
+        print('Loading fitted adaptor from', saved_state_folder)
+        self.state = read_data(saved_state_folder)
 
     @staticmethod
     def _normalise_table_probabilities(table_logprobs):
@@ -127,8 +137,9 @@ class Adaptor:
         table_logprobs.append((new_table_logprob.item(), -1))
         return table_logprobs
 
-    def fit(self, generator):
-        for x, y, _, token_ids in tqdm(self.token_dataloader, total=len(self.token_dataloader), \
+    def fit(self, generator, dataloader):
+        self.state['dataset_length'] = len(dataloader)
+        for x, y, _, token_ids in tqdm(dataloader, total=len(dataloader), \
                                     desc='Fitting adaptor', mininterval=.2):
             tokens_logprobs = generator.get_word_log_probability(x, y)
             # iterate through tokens in batch:
@@ -145,7 +156,6 @@ class Adaptor:
                         self.state['tables_with_word_label'][token].remove(token_table_id)
                         self.state['total_tables'] -= 1
                 table_logprobs = self._calculate_table_logprobs(token, token_logprob)
-                # normalise to probabilities before sampling
                 table_probs = self._normalise_table_probabilities(table_logprobs)
                 assigned_table_id = self._sample_new_table_assignment(table_probs)
                 # put customer to new table
@@ -154,7 +164,7 @@ class Adaptor:
                 self.state['tables_with_word_label'][token].add(assigned_table_id)
                 self.state['table_assignments'][token_id] = assigned_table_id
         if self.save_state:
-            print('Saving adaptor state to', self.saved_state_file)
-            self.save_fitted_state()
+            print('Saving adaptor state to', self.saved_state_folder)
+            self.save_fitted_state(dataloader)
         print('Done fitting the adaptor')
         return self.state['tables_with_word_label']

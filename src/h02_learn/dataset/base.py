@@ -1,17 +1,28 @@
 import torch
 from abc import ABC, abstractmethod
 from torch.utils.data import Dataset
-
+import numpy as np
+from collections import Counter
 
 class BaseDataset(Dataset, ABC):
     # pylint: disable=no-member
 
-    def __init__(self, data, folds):
+    def __init__(self, data, folds, max_tokens=None):
         self.data = data
         self.folds = folds
+        self.max_tokens = max_tokens
         self.process_train(data)
         self.process_eval(data)
         self._train = True
+
+    @staticmethod
+    def subsample(word_freqs, max_tokens):
+        words, weights = zip(*word_freqs)
+        probs = np.array(weights)/sum(weights)
+        sample = np.random.choice(words, p=probs, size=max_tokens)
+        sample_counts = Counter(sample)
+        sample_freqs = [(word, count) for word, count in sample_counts.items()]
+        return sample_freqs
 
     @abstractmethod
     def process_train(self, data):

@@ -10,14 +10,10 @@ from util import util
 from util import argparser
 
 def get_args():
-    argparser.add_argument('--epochs', type=int, default=5)
     # Save
-    argparser.add_argument('--generator-path', type=str)
     argparser.add_argument('--adaptor-results-file', type=str, required=True)
     # adaptor
-    argparser.add_argument('--adaptor-iterations', type=int, default=10)
-    argparser.add_argument('--adaptor-state-file', type=str, required=True)
-    argparser.add_argument('--load-adaptor-init-state', default=False, action='store_true')
+    argparser.add_argument('--two-stage-state-folder', type=str, required=True)
     args = argparser.parse_args()
     return args
 
@@ -52,10 +48,9 @@ def main():
     print('Train size: %d Dev size: %d Test size: %d' %
           (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
-    generator = load_generator(alphabet, args.generator_path)
+    generator = load_generator(alphabet, args.two_stage_state_folder)
     generator.eval()
-    adaptor = Adaptor(0, 0, alphabet, trainloader, state_filename=args.adaptor_state_file,\
-                    load_state=True, save_state=False)
+    adaptor = Adaptor.load(args.two_stage_state_folder)
 
     train_loss = evaluate_adaptor(trainloader, generator, adaptor)
     dev_loss = evaluate_adaptor(devloader, generator, adaptor)

@@ -9,7 +9,12 @@ class TypeDataset(BaseDataset):
         folds_data, alphabet, _ = data
         self.alphabet = alphabet
 
-        self.words = [word for fold in self.folds for word in folds_data[fold].keys()]
+        word_freqs = [(word, info['count'])
+                           for fold in self.folds
+                           for word, info in folds_data[fold].items()]
+        if self.max_tokens is not None:
+            word_freqs = self.subsample(word_freqs, self.max_tokens)
+        self.words = [word for word, _ in word_freqs]
         self.word_train = [torch.LongTensor(self.get_word_idx(word)) for word in self.words]
         self.train_instances = len(self.word_train)
 

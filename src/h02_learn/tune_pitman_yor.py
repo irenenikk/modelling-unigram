@@ -3,7 +3,7 @@ import numpy as np
 
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds
-from h02_learn.train_pitman_yor import train_with_pitman_yor, build_training_args
+from h02_learn.train_pitman_yor import train_two_stage_model,generator, adaptor
 from h03_eval.eval_two_stage import evaluate_adaptor
 from util import argparser
 from util import util
@@ -41,11 +41,12 @@ def tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas):
     best_params = None
     for alpha in alphas:
         for beta in betas:
-            training_args = build_training_args(args, save_adaptor_state=False)
-            training_args['alpha'] = alpha
-            training_args['beta'] = beta
-            generator, adaptor, adaptor_dev_loss = train_with_pitman_yor(trainloader, devloader,\
-                                                                        alphabet, args.epochs, training_args)
+            generator = load_generator(alphabet, args.generator_path)
+            adaptor = Adaptor(alpha, beta, alphabet,\
+                                state_filename=args.two_stage_state_folder,\
+                                save_state=False)
+            adaptor_dev_loss = \
+                train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, args)
             print('Adaptor dev loss', adaptor_dev_loss, 'with a =', alpha, ', b =', beta)
             if adaptor_dev_loss < best_loss:
                 print('New best loss')
@@ -54,7 +55,8 @@ def tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas):
                 print('Saving adaptor state to', args.adaptor_state_file)
                 adaptor.save_fitted_state(args.adaptor_state_file)
             adaptor_train_loss = evaluate_adaptor(trainloader, generator, adaptor)
-            tuning_results += construct_pitman_yor_tuning_results(generator, alpha, beta, adaptor_train_loss, adaptor_dev_loss)
+            tuning_results += \
+                construct_pitman_yor_tuning_results(generator, alpha, beta, adaptor_train_loss, adaptor_dev_loss)
     print('Best loss', best_loss, 'obtained with (a, b) =', best_params)
     return tuning_results
 

@@ -9,10 +9,11 @@ class TokenDataset(BaseDataset):
     def process_train(self, data):
         folds_data, alphabet, _ = data
         self.alphabet = alphabet
-
         self.word_freqs = [(word, info['count'])
                            for fold in self.folds
                            for word, info in folds_data[fold].items()]
+        if self.max_tokens is not None:
+            self.word_freqs = self.subsample(self.word_freqs, self.max_tokens)
         self.word_train, self.train_instances = self.build_token_list(self.word_freqs)
 
     def process_eval(self, data):

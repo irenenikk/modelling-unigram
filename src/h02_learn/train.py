@@ -18,6 +18,7 @@ def get_args():
     argparser.add_argument('--wait-epochs', type=int, default=5)
     # Save
     argparser.add_argument('--generator-path', type=str)
+    argparser.add_argument('--max-train-tokens', type=int)
     args = argparser.parse_args()
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
@@ -92,7 +93,7 @@ def main():
 
     trainloader, devloader, alphabet = \
         get_data_loaders_with_folds(args.dataset, args.data_file, folds,\
-                                        args.batch_size)
+                                        args.batch_size, max_train_tokens=args.max_train_tokens)
 
     print('Train size: %d Dev size: %d ' %
           (len(trainloader.dataset), len(devloader.dataset)))

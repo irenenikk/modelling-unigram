@@ -62,17 +62,17 @@ def get_data_loader(dataset, batch_size, shuffle=True):
     return dataloader
 
 
-def get_data_loader_with_folds(dataset_cls, data, folds, batch_size, shuffle):
-    trainset = dataset_cls(data, folds)
+def get_data_loader_with_folds(dataset_cls, data, folds, batch_size, shuffle, max_tokens=None):
+    trainset = dataset_cls(data, folds, max_tokens)
     return DataLoader(trainset, batch_size=batch_size, shuffle=shuffle, collate_fn=generate_batch)
 
 
-def get_data_loaders_with_folds(data_type, fname, folds, batch_size, test=False):
+def get_data_loaders_with_folds(data_type, fname, folds, batch_size, test=False, max_train_tokens=None):
     dataset_cls = get_data_cls(data_type)
     data = load_data(fname)
     alphabet = get_alphabet(data)
     trainloader = get_data_loader_with_folds(dataset_cls, data, folds[0],\
-                                            batch_size=batch_size, shuffle=True)
+                                            batch_size=batch_size, shuffle=True, max_tokens=max_train_tokens)
     devloader = get_data_loader_with_folds(dataset_cls, data, folds[1],\
                                             batch_size=batch_size, shuffle=False)
     if test:

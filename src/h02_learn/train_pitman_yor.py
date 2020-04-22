@@ -15,6 +15,8 @@ from util import util
 
 def get_args():
     argparser.add_argument('--epochs', type=int, default=1)
+    # Data
+    argparser.add_argument('--max-train-tokens', type=int)
     # Optimization
     argparser.add_argument('--eval-batches', type=int, default=200)
     argparser.add_argument('--wait-epochs', type=int, default=5)
@@ -25,7 +27,7 @@ def get_args():
     argparser.add_argument('--alpha', type=float, required=True)
     argparser.add_argument('--beta', type=float, required=True)
     argparser.add_argument('--adaptor-iterations', type=int, default=6)
-    argparser.add_argument('--adaptor-state-file', type=str, required=True)
+    argparser.add_argument('--two-stage-state-folder', type=str, required=True)
     argparser.add_argument('--load-adaptor-init-state', default=False, action='store_true')
     args = argparser.parse_args()
     args.wait_iterations = args.wait_epochs * args.eval_batches
@@ -37,59 +39,49 @@ def get_model(alphabet, args):
         nlayers=args.nlayers, dropout=args.dropout, ignore_index=alphabet.char2idx('PAD')) \
         .to(device=constants.device)
 
-def train_adaptor(adaptor, generator, devloader, adaptor_iterations):
+def train_adaptor(adaptor, generator, trainloader, devloader, adaptor_iterations):
+    """ Train and recover the state performing the best on development set """
     min_dev_loss = 1e5
     best_state = adaptor.state
     best_tables_with_word_labels = None
     for adaptor_iter in range(adaptor_iterations):
         print('Adaptor iteration', adaptor_iter + 1, '/', adaptor_iterations)
-        tables_with_word_labels = adaptor.fit(generator)
-        adaptor_dev_loss = evaluate_adaptor(devloader, generator, adaptor)
-        print('Adaptor dev loss', adaptor_dev_loss)
-        if adaptor_dev_loss < min_dev_loss:
-            min_dev_loss = adaptor_dev_loss
+        tables_with_word_labels = adaptor.fit(generator, trainloader)
+        two_stage_dev_loss = evaluate_adaptor(devloader, generator, adaptor)
+        print('Adaptor dev loss', two_stage_dev_loss)
+        if two_stage_dev_loss < min_dev_loss:
+            min_dev_loss = two_stage_dev_loss
             best_state = adaptor.state
             best_tables_with_word_labels = tables_with_word_labels
     adaptor.set_state(best_state)
-    return best_tables_with_word_labels, adaptor, min_dev_loss
+    return best_tables_with_word_labels, min_dev_loss
 
-def train_generator(generator, tables_with_word_labels, devloader, training_args, alphabet):
-    # use the dataset defined by the adaptor if present
+def train_generator(generator, tables_with_word_labels, devloader, args, alphabet):
     generator.train()
     tables_with_word_labels_dataset = TableLabelDataset(tables_with_word_labels, alphabet)
     table_label_dataloader = get_data_loader(tables_with_word_labels_dataset,\
-                                                training_args['batch_size'])
+                                                args.batch_size)
     _, generator_dev_loss = train(table_label_dataloader, devloader, generator, alphabet,\
-                                    training_args['eval_batches'], training_args['wait_iterations'])
-    generator.save(training_args['generator_path'] + '_retrained')
+                                    args.eval_batches, args.wait_iterations)
+    generator.save(args.two_stage_state_folder)
     print('Generator dev loss', generator_dev_loss)
-    return generator
 
-def train_with_pitman_yor(trainloader, devloader, alphabet, epochs, training_args):
-    generator = load_generator(alphabet, training_args['generator_path'])
-    adaptor = Adaptor(training_args['alpha'], training_args['beta'], alphabet, trainloader,\
-                        state_filename=training_args['adaptor_state_file'],\
-                        load_state=training_args['load_adaptor_init_state'],\
-                        save_state=training_args['save_adaptor_state'])
+def train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, args):
     tables_with_word_labels = adaptor.state['tables_with_word_label']
-    for i in range(epochs):
+    for i in range(args.epochs):
         print('Iteration', i)
         # train generator
         if len(tables_with_word_labels) > 0:
             print('Training the generator with table label data')
-            generator = train_generator(generator, tables_with_word_labels,\
-                                            devloader, training_args, alphabet)
+            train_generator(generator, tables_with_word_labels,\
+                                            devloader, args, alphabet)
         # train adaptor
         print('Training the adaptor')
-        tables_with_word_labels, adaptor, adaptor_dev_loss = train_adaptor(adaptor, generator, devloader, training_args['adaptor_iterations'])
-    return generator, adaptor, adaptor_dev_loss
+        tables_with_word_labels, two_stage_dev_loss = \
+            train_adaptor(adaptor, generator, trainloader, devloader, args.adaptor_iterations)
+    return two_stage_dev_loss
 
-def build_training_args(args, save_adaptor_state):
-    training_args = vars(args)
-    training_args['save_adaptor_state'] = save_adaptor_state
-    return training_args
-
-def save_pitman_yor_training_results(model, args, train_loss, dev_loss, generator_dev_loss,\
+def save_two_stage_training_results(model, args, train_loss, dev_loss, generator_dev_loss,\
                                         training_time, train_size, dev_size):
     results_fname = args.adaptor_results_file
     print('Saving to', results_fname)
@@ -112,16 +104,18 @@ def main():
 
     trainloader, devloader, alphabet = \
         get_data_loaders_with_folds(args.dataset, args.data_file, folds,\
-                                        args.batch_size)
+                                        args.batch_size, max_train_tokens=args.max_train_tokens)
 
     print('Train size: %d Dev size: %d' %
           (len(trainloader.dataset), len(devloader.dataset)))
 
     start = time.time()
 
-    training_args = build_training_args(args, save_adaptor_state=True)
-    generator, adaptor, adaptor_dev_loss = \
-        train_with_pitman_yor(trainloader, devloader, alphabet, args.epochs, training_args)
+    generator = load_generator(alphabet, args.generator_path)
+    adaptor = Adaptor(args.alpha, args.beta, alphabet,\
+                        state_filename=args.two_stage_state_folder,\
+                        save_state=args.save_adaptor_state)
+    two_stage_dev_loss = train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, args)
 
     end = time.time()
     training_time = end - start
@@ -131,15 +125,15 @@ def main():
     print('Getting generator dev loss')
     generator_dev_loss = evaluate_generator(devloader, generator, alphabet)
 
-    print('Generator Training loss: %.4f Dev loss: %.4f' %
+    print('Generator training loss: %.4f Dev loss: %.4f' %
           (generator_train_loss, generator_dev_loss))
 
-    adaptor_train_loss = evaluate_adaptor(trainloader, generator, adaptor)
+    two_stage_train_loss = evaluate_adaptor(trainloader, generator, adaptor)
 
-    print('Adaptor Training loss: %.4f Dev loss: %.4f' %
-          (adaptor_train_loss, adaptor_dev_loss))
+    print('Two-stage model training loss: %.4f Dev loss: %.4f' %
+          (two_stage_train_loss, two_stage_dev_loss))
 
-    save_pitman_yor_training_results(generator, args, adaptor_train_loss, adaptor_dev_loss,\
+    save_two_stage_training_results(generator, args, two_stage_train_loss, two_stage_dev_loss,\
                                         generator_dev_loss, training_time, trainset_size, len(devloader.dataset))
 
 
