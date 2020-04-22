@@ -121,7 +121,7 @@ $(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)
 # Tokenize wikipedia
 $(TOKENIZED_FILE): $(JSON_FILE)
 	echo "Tokenize data"
-	python src/h01_data/tokenizer.py --wikipedia-raw-file $(JSON_FILE) --wikipedia-tokenized-file $(TOKENIZED_FILE) --dump-size 10000
+	python src/h01_data/tokenizer.py --wikipedia-raw-file $(JSON_FILE) --wikipedia-tokenized-file $(TOKENIZED_FILE) --dump-size 10000 --language $(LANGUAGE)
 
 # Preprocess wikipedia to json
 $(JSON_FILE): $(XML_FILE)
