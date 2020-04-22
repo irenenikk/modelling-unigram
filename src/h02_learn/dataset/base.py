@@ -1,8 +1,9 @@
-import torch
 from abc import ABC, abstractmethod
+from collections import Counter
+
+import torch
 from torch.utils.data import Dataset
 import numpy as np
-from collections import Counter
 
 class BaseDataset(Dataset, ABC):
     # pylint: disable=no-member
@@ -21,7 +22,7 @@ class BaseDataset(Dataset, ABC):
         probs = np.array(weights)/sum(weights)
         sample = np.random.choice(words, p=probs, size=max_tokens)
         sample_counts = Counter(sample)
-        sample_freqs = [(word, count) for word, count in sample_counts.items()]
+        sample_freqs = list(sample_counts.items())
         return sample_freqs
 
     @abstractmethod

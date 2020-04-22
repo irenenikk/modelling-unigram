@@ -1,15 +1,11 @@
 import argparse
 from . import util
 
-parser = argparse.ArgumentParser(description='LanguageModel')
-
-# Data defaults
-parser.add_argument('--dataset', type=str)
-parser.add_argument('--data-file', type=str)
-parser.add_argument('--batch-size', type=int, default=32)
-
-parser.add_argument('--seed', type=int, default=7,
-                    help='Seed for random algorithms repeatability (default: 7)')
+def add_data_args(parser):
+    # Data defaults
+    parser.add_argument('--dataset', type=str)
+    parser.add_argument('--data-file', type=str)
+    parser.add_argument('--batch-size', type=int, default=32)
 
 def add_generator_args(parser):
     # Model defaults
@@ -18,22 +14,16 @@ def add_generator_args(parser):
     parser.add_argument('--hidden-size', type=int, default=512)
     parser.add_argument('--dropout', type=float, default=.33)
 
-def add_argument(*args, **kwargs):
-    return parser.add_argument(*args, **kwargs)
-
-
-def set_defaults(*args, **kwargs):
-    return parser.set_defaults(*args, **kwargs)
-
-
-def get_default(*args, **kwargs):
-    return parser.get_default(*args, **kwargs)
-
-
-def parse_args(*args, **kwargs):
+def get_argparser():
+    parser = argparse.ArgumentParser(description='LanguageModel')
+    parser.add_argument('--seed', type=int, default=7,
+                        help='Seed for random algorithms repeatability (default: 7)')
+    add_data_args(parser)
     add_generator_args(parser)
-    args = parser.parse_args(*args, **kwargs)
+    return parser
 
+def parse_args(parser):
+    args = parser.parse_args()
     # util.mkdir(args.rfolder)
     # util.mkdir(args.cfolder)
     util.config(args.seed)

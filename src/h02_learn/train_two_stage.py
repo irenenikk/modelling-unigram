@@ -5,16 +5,18 @@ import os
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
 from h02_learn.model import LstmLM
-from h02_learn.train import train, load_generator
+from h02_learn.train_generator import train, load_generator
 from h02_learn.dataset.table_label import TableLabelDataset
 from h02_learn.adaptor import Adaptor
 from h03_eval.eval_generator import evaluate_generator
 from h03_eval.eval_two_stage import evaluate_adaptor
-from util import constants, argparser
+from util.argparser import get_argparser, parse_args
+from util import constants
 from util import util
 
 def get_args():
-    argparser.add_argument('--epochs', type=int, default=1)
+    argparser = get_argparser()
+    argparser.add_argument('--epochs', type=int, default=2)
     # Data
     argparser.add_argument('--max-train-tokens', type=int)
     # Optimization
@@ -26,10 +28,10 @@ def get_args():
     # adaptor
     argparser.add_argument('--alpha', type=float, required=True)
     argparser.add_argument('--beta', type=float, required=True)
-    argparser.add_argument('--adaptor-iterations', type=int, default=6)
+    argparser.add_argument('--adaptor-iterations', type=int, default=1)
     argparser.add_argument('--two-stage-state-folder', type=str, required=True)
     argparser.add_argument('--load-adaptor-init-state', default=False, action='store_true')
-    args = argparser.parse_args()
+    args = parse_args(argparser)
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
 
@@ -112,10 +114,10 @@ def main():
     start = time.time()
 
     generator = load_generator(alphabet, args.generator_path)
-    adaptor = Adaptor(args.alpha, args.beta, alphabet,\
-                        state_filename=args.two_stage_state_folder,\
-                        save_state=args.save_adaptor_state)
-    two_stage_dev_loss = train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, args)
+    initial_state = Adaptor.get_initial_state(args.alpha, args.beta, alphabet)
+    adaptor = Adaptor(initial_state, state_folder=args.two_stage_state_folder)
+    two_stage_dev_loss = \
+        train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, args)
 
     end = time.time()
     training_time = end - start
@@ -134,7 +136,8 @@ def main():
           (two_stage_train_loss, two_stage_dev_loss))
 
     save_two_stage_training_results(generator, args, two_stage_train_loss, two_stage_dev_loss,\
-                                        generator_dev_loss, training_time, trainset_size, len(devloader.dataset))
+                                    generator_dev_loss, training_time,\
+                                    len(trainloader.dataset), len(devloader.dataset))
 
 
 if __name__ == '__main__':

@@ -7,19 +7,20 @@ from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.model import LstmLM
 from h02_learn.train_info import TrainInfo
 from h03_eval.eval_generator import evaluate_generator
-from util import argparser
+from util.argparser import get_argparser, parse_args
 from util import util
 from util import constants
 
 
 def get_args():
     # Optimization
+    argparser = get_argparser()
     argparser.add_argument('--eval-batches', type=int, default=200)
     argparser.add_argument('--wait-epochs', type=int, default=5)
     # Save
     argparser.add_argument('--generator-path', type=str)
     argparser.add_argument('--max-train-tokens', type=int)
-    args = argparser.parse_args()
+    args = parse_args(argparser)
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
 
@@ -86,8 +87,8 @@ def save_checkpoints(model, train_loss, dev_loss, train_size, dev_size, checkpoi
     results_fname = checkpoints_path + '/results.csv'
     save_results(model, train_loss, dev_loss, train_size, dev_size, results_fname)
 
-
 def main():
+    # pylint: disable=all
     args = get_args()
     folds = [list(range(8)), [8], [9]]
 
@@ -107,8 +108,8 @@ def main():
     print('Final Training loss: %.4f Dev loss: %.4f ' %
           (train_loss, dev_loss))
 
-    save_checkpoints(model, train_loss, dev_loss, trainset_size,\
-                        devset_size, args.generator_path)
+    save_checkpoints(model, train_loss, dev_loss, len(trainloader.dataset),\
+                        len(devloader.dataset), args.generator_path)
 
 if __name__ == '__main__':
     main()

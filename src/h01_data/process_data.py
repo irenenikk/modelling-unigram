@@ -5,11 +5,12 @@ from tqdm import tqdm
 
 sys.path.append('./src/')
 from h01_data.alphabet import Alphabet
-from util import argparser
+from util.argparser import get_argparser, parse_args
 from util import util
 
 
 def get_args():
+    argparser = get_argparser()
     argparser.add_argument(
         "--wikipedia-tokenized-file", type=str,
         help="The file in which wikipedia tokenized results should be")
@@ -19,7 +20,7 @@ def get_args():
     argparser.add_argument(
         "--max-sentences", type=int, default=4000,
         help="Maximum number of sentences used")
-    return argparser.parse_args()
+    return parse_args(argparser)
 
 
 def count_sentences(fname):

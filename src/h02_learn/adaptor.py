@@ -7,34 +7,35 @@ from tqdm import tqdm
 from util.util import hacked_exp, write_data, read_data
 
 class Adaptor:
-    def __init__(self, alpha, beta, alphabet,\
-                    state_folder, save_state=True):
-        self.saved_state_folder = state_folder
-        self.save_state = save_state
-        self.state = {}
-        # initialise mapping from table index to n.o. customers
-        # int --> int
-        self.state['customers_per_table'] = defaultdict(int)
-        # initialise mapping from table indices to labels
-        # int --> list(int)
-        self.state['tables_with_word_label'] = defaultdict(set)
-        # initialise mapping from customer id to table id
-        # int --> int
-        self.state['table_assignments'] = {}
-        # this index doesn't have to be "accurate"
-        # there may be gaps in the indices as some tables are removed
-        # but we just want to make sure that every table index is unique
-        self.state['max_table_index'] = -1
-        # this is marked as the function K in the original paper
-        self.state['total_tables'] = 0
-        self.state['alpha'] = torch.Tensor([alpha])
-        self.state['beta'] = torch.Tensor([beta])
-        self.state['alphabet'] = alphabet
+    # pylint: disable=too-many-locals
 
     def __init__(self, state, state_folder, save_state=True):
         self.state = state
         self.saved_state_folder = state_folder
         self.save_state = save_state
+
+    @staticmethod
+    def get_initial_state(alpha, beta, alphabet):
+        state = {}
+        # initialise mapping from table index to n.o. customers
+        # int --> int
+        state['customers_per_table'] = defaultdict(int)
+        # initialise mapping from table indices to labels
+        # int --> list(int)
+        state['tables_with_word_label'] = defaultdict(set)
+        # initialise mapping from customer id to table id
+        # int --> int
+        state['table_assignments'] = {}
+        # this index doesn't have to be "accurate"
+        # there may be gaps in the indices as some tables are removed
+        # but we just want to make sure that every table index is unique
+        state['max_table_index'] = -1
+        # this is marked as the function K in the original paper
+        state['total_tables'] = 0
+        state['alpha'] = torch.Tensor([alpha])
+        state['beta'] = torch.Tensor([beta])
+        state['alphabet'] = alphabet
+        return state
 
     @staticmethod
     def get_state_file(saved_state_folder):
@@ -43,7 +44,7 @@ class Adaptor:
     @classmethod
     def load(cls, state_folder):
         state_file = cls.get_state_file(state_folder)
-        print('Loading fitted adaptor from', state_file)        
+        print('Loading fitted adaptor from', state_file)
         state = read_data(state_file)
         adaptor = cls(state, state_folder)
         return adaptor
@@ -79,7 +80,8 @@ class Adaptor:
         return (entropy / total_tokens).item()
 
     def get_token_probability(self, generator_logprob, token):
-        """ The marginal probability of a token defined by marginalising over table assignments as defined by Goldwater et al. """
+        """ The marginal probability of a token defined by marginalising over
+            table assignments as defined by Goldwater et al. """
         i = self.state['dataset_length']
         tables_with_word_label = self.state['tables_with_word_label'][token]
         customers_in_tables_with_label = self.state['customers_in_tables_with_label'][token]
@@ -109,12 +111,8 @@ class Adaptor:
         saved_state_folder = state_folder
         if state_folder is None:
             saved_state_folder = self.saved_state_folder
-        adaptor_state_file = self.get_state_file(self.saved_state_folder)
+        adaptor_state_file = self.get_state_file(saved_state_folder)
         write_data(adaptor_state_file, self.state)
-
-    def load_fitted_adaptor(saved_state_folder):
-        print('Loading fitted adaptor from', saved_state_folder)
-        self.state = read_data(saved_state_folder)
 
     @staticmethod
     def _normalise_table_probabilities(table_logprobs):

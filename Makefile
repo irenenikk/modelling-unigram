@@ -88,32 +88,30 @@ $(GENERATOR_RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
 # Train two-stage model initialising with types
 run_two_stage_type_training: $(CHECKPOINT_TYPE_FILE)
 	echo "Train two-stage model" $(CHECKPOINT_TYPE_FILE)
-	mkdir -p $(CHECKPOINT_TYPE_PATH)
 	mkdir -p $(TWO_STAGE_INIT_TYPE_STATE_FOLDER)
 	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset tokens \
+	python src/h02_learn/train_two_stage.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset tokens \
 			--adaptor-results-file $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --max-train-tokens $(MAX_TRAIN_TOKENS)
 
 # Train two-stage model initialising with tokens
 run_two_stage_token_training: $(CHECKPOINT_TOKEN_FILE)
 	echo "Train two-stage model" $(CHECKPOINT_TOKEN_FILE)
-	mkdir -p $(CHECKPOINT_TOKEN_PATH)
 	mkdir -p $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER)
 	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h02_learn/train_pitman_yor.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens \
+	python src/h02_learn/train_two_stage.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens \
 			--adaptor-results-file $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --max-train-tokens $(MAX_TRAIN_TOKENS)
 
 # Train tokens model
 $(CHECKPOINT_TOKEN_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train tokens model" $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(CHECKPOINT_TOKEN_PATH)
-	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens --max-train-tokens $(MAX_TRAIN_TOKENS)
+	python src/h02_learn/train_generator.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens --max-train-tokens $(MAX_TRAIN_TOKENS)
 
 # Train types model
 $(CHECKPOINT_TYPE_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train types model" $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)
-	python src/h02_learn/train.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset types --max-train-tokens $(MAX_TRAIN_TOKENS)
+	python src/h02_learn/train_generator.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset types --max-train-tokens $(MAX_TRAIN_TOKENS)
 
 # Preprocess Data
 $(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)
