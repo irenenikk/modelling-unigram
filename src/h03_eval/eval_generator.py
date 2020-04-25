@@ -51,7 +51,7 @@ def eval_all(model_paths, dataloaders):
     results = [['model', 'dataset', 'train_loss', 'dev_loss', 'test_loss']]
     for model_path in model_paths:
         if not os.path.exists(LstmLM.get_name(model_path)):
-            pass
+            continue
         model = load_model(model_path)
         model_name = model_path.split('/')[-1]
 

@@ -79,12 +79,6 @@ run_two_stage_token_evaluation: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_S
 	echo "Evaluate two-stage model initialised with a token generator"
 	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --results-file $(TWO_STAGE_INIT_TOKEN_ON_TOKEN_RESULTS_FILE) --batch-size 64 --dataset tokens
 
-# Eval language models
-$(GENERATOR_RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
-	echo "Eval models" $(GENERATOR_RESULTS_FILE)
-	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h03_eval/eval_generator.py --data-file $(PROCESSED_DATA_FILE) --eval-path $(CHECKPOINT_DIR_LANG) --results-file $(GENERATOR_RESULTS_FILE) --batch-size 64 --dataset tokens
-
 # Train two-stage model initialising with types
 run_two_stage_type_training: $(CHECKPOINT_TYPE_FILE)
 	echo "Train two-stage model" $(CHECKPOINT_TYPE_FILE)
@@ -100,6 +94,12 @@ run_two_stage_token_training: $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/train_two_stage.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens \
 			--adaptor-results-file $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --max-train-tokens $(MAX_TRAIN_TOKENS)
+
+# Eval language models
+$(GENERATOR_RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
+	echo "Eval models" $(GENERATOR_RESULTS_FILE)
+	mkdir -p $(RESULTS_DIR_LANG)
+	python src/h03_eval/eval_generator.py --data-file $(PROCESSED_DATA_FILE) --eval-path $(CHECKPOINT_DIR_LANG) --results-file $(GENERATOR_RESULTS_FILE) --batch-size 64 --dataset tokens
 
 # Train tokens model
 $(CHECKPOINT_TOKEN_FILE): $(PROCESSED_DATA_FILE)

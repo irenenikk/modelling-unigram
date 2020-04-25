@@ -1,9 +1,11 @@
 # Process Wikipedia to tokens, tailored to wikipedia-extractor.py dump output
+import sys
 import json
 import argparse
 from tqdm import tqdm
 import gensim.utils
 
+sys.path.append('./src/')
 from h01_data.tokenizer_model import Tokenizer, Sentencizer
 
 
