@@ -4,7 +4,7 @@ from collections import defaultdict
 import torch
 import numpy as np
 from tqdm import tqdm
-from util.util import hacked_exp, write_data, read_data, create_int_defaultdict
+from util.util import write_data, read_data, create_int_defaultdict
 
 class Adaptor:
     # pylint: disable=too-many-locals
