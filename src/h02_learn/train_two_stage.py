@@ -79,7 +79,6 @@ def train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, 
     tables_with_word_labels = adaptor.state['tables_with_word_label']
     for i in range(args.epochs):
         print('Iteration', i)
-<<<<<<< Updated upstream
         # train adaptor
         print('Training the adaptor')
         tables_with_word_labels, two_stage_dev_loss = \
@@ -87,7 +86,6 @@ def train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, 
         print('Training the generator with table label data')
         train_generator(generator, tables_with_word_labels,
                         devloader, args, alphabet)
-=======
         # precalculate the type logprobs
         types_logprobs = precalculate_types_logprobs(generator, type_trainloader)
         # train adaptor
@@ -99,7 +97,6 @@ def train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, 
         print('Training the generator with table label data')
         train_generator(generator, tables_with_word_labels,\
                                         token_devloader, args, token_alphabet)
->>>>>>> Stashed changes
     return two_stage_dev_loss
 
 

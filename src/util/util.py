@@ -3,6 +3,7 @@ import pathlib
 import io
 import csv
 import pickle
+from collections import defaultdict
 import numpy as np
 import torch
 
@@ -67,3 +68,6 @@ def hacked_exp(x):
     maxim = x.max()
     y = np.exp(x - maxim)
     return y / y.sum()
+
+def create_int_defaultdict():
+    return defaultdict(int)

@@ -46,6 +46,7 @@ def process_line(line, word_info, alphabet):
         # exclude words that contain non-letters
         if not word.isalpha():
             continue
+        word = word.lower()
         alphabet.add_word(word)
 
         if word in word_info:
