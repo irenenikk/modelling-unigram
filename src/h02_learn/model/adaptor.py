@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 import torch
 from tqdm import tqdm
-from util.util import hacked_exp, write_data, read_data, create_int_defaultdict
+from util.util import write_data, read_data, create_int_defaultdict
 
 
 class Adaptor:
