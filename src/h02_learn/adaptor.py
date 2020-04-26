@@ -4,7 +4,7 @@ from collections import defaultdict
 import torch
 import numpy as np
 from tqdm import tqdm
-from util.util import hacked_exp, write_data, read_data
+from util.util import hacked_exp, write_data, read_data, create_int_defaultdict
 
 class Adaptor:
     # pylint: disable=too-many-locals
@@ -17,20 +17,14 @@ class Adaptor:
     @staticmethod
     def get_initial_state(alpha, beta, alphabet):
         state = {}
-        # initialise mapping from table index to n.o. customers
-        # int --> int
-        state['customers_per_table'] = defaultdict(int)
+        # optimised representation:
+        # { word: { customer amount: table amount } }
+        state['seating_histogram_per_word'] = defaultdict(create_int_defaultdict)
+        state['customers_in_tables_with_label'] = defaultdict(int)
         # initialise mapping from table indices to labels
-        # int --> list(int)
-        state['tables_with_word_label'] = defaultdict(set)
-        # initialise mapping from customer id to table id
-        # int --> int
-        state['table_assignments'] = {}
-        # this index doesn't have to be "accurate"
-        # there may be gaps in the indices as some tables are removed
-        # but we just want to make sure that every table index is unique
-        state['max_table_index'] = -1
-        # this is marked as the function K in the original paper
+        # { word : table amount }
+        state['tables_with_word_label'] = defaultdict(int)
+        state['assigned_to_table'] = defaultdict(bool)
         state['total_tables'] = 0
         state['alpha'] = torch.Tensor([alpha])
         state['beta'] = torch.Tensor([beta])
@@ -51,18 +45,6 @@ class Adaptor:
 
     def set_state(self, state):
         self.state = state
-
-    def _sample_new_table_assignment(self, table_probs):
-        probs, ids = zip(*table_probs)
-        table_index = np.random.choice(ids, 1, p=probs)[0]
-        if table_index < 0:
-            # choose new table index
-            # increment counter for total amount of tables
-            self.state['total_tables'] += 1
-            # increment table id counter
-            self.state['max_table_index'] += 1
-            return self.state['max_table_index']
-        return table_index
 
     def calculate_cross_entropy(self, dataloader, generator):
         entropy = 0
@@ -85,55 +67,66 @@ class Adaptor:
         i = self.state['dataset_length']
         tables_with_word_label = self.state['tables_with_word_label'][token]
         customers_in_tables_with_label = self.state['customers_in_tables_with_label'][token]
-        if len(tables_with_word_label) == 0 and customers_in_tables_with_label == 0:
+        if tables_with_word_label == 0 and customers_in_tables_with_label == 0:
             # this takes care of rare words not encountered in training
             # their probabilities are too small to take away from log space
             adaptor_state = self.state['total_tables']*self.state['alpha'] + self.state['beta']
             return torch.log(adaptor_state) + generator_logprob - torch.log(i+self.state['beta'])
         generator_prob = torch.exp(generator_logprob)
-        state1 = customers_in_tables_with_label - len(tables_with_word_label)*self.state['alpha']
+        state1 = customers_in_tables_with_label - tables_with_word_label*self.state['alpha']
         state2 = self.state['total_tables']*self.state['alpha'] + self.state['beta']
         res = torch.log(state1 + state2*generator_prob)-torch.log(i+self.state['beta'])
         return res
 
-    def count_customers_in_tables_with_label(self, dataloader):
-        c_in_tables_with_label = defaultdict(int)
-        for x, _, _, _ in dataloader:
-            for word_indices in x:
-                word = ''.join(self.state['alphabet'].idx2word(word_indices[1:]))
-                c_in_tables_with_label[word] = sum([self.state['customers_per_table'][table_id] \
-                                        for table_id in self.state['tables_with_word_label'][word]])
-        return c_in_tables_with_label
-
-    def save_fitted_state(self, dataloader, state_folder=None):
-        customers_in_tables_with_label = self.count_customers_in_tables_with_label(dataloader)
-        self.state['customers_in_tables_with_label'] = customers_in_tables_with_label
+    def save_fitted_state(self, state_folder=None):
         saved_state_folder = state_folder
         if state_folder is None:
             saved_state_folder = self.saved_state_folder
         adaptor_state_file = self.get_state_file(saved_state_folder)
         write_data(adaptor_state_file, self.state)
 
-    @staticmethod
-    def _normalise_table_probabilities(table_logprobs):
-        exp_probs = hacked_exp([prob for prob, idd in table_logprobs])
-        normaliser = sum(exp_probs)
-        table_probs = [(prob/normaliser, table_logprobs[i][1]) \
-                            for i, prob in enumerate(exp_probs)]
-        return table_probs
+    def customer_enters(self, word, word_logprob):
+        customers_in_tables = self.state['customers_in_tables_with_label'][word]
+        tables_with_word_label = self.state['tables_with_word_label'][word]
+        old_table_prob = (customers_in_tables - self.state['alpha']*tables_with_word_label).item()
+        logstate = torch.log(self.state['beta'] + self.state['total_tables']*self.state['alpha'])
+        new_table_prob = torch.exp(logstate + word_logprob).item()
+        random_draw = np.random.uniform(0, old_table_prob + new_table_prob)
+        if random_draw < new_table_prob or customers_in_tables == 0:
+            # put into a new table
+            self.state['seating_histogram_per_word'][word][1] += 1
+            self.state['total_tables'] += 1
+            self.state['tables_with_word_label'][word] += 1
+        else:
+            # put into an existing table based on histogram
+            random_draw = np.random.uniform(0, customers_in_tables)
+            for customer_amount in self.state['seating_histogram_per_word'][word]:
+                random_draw -= customer_amount * \
+                                self.state['seating_histogram_per_word'][word][customer_amount]
+                if random_draw <= 0:
+                    self.state['seating_histogram_per_word'][word][customer_amount+1] += 1
+                    self.state['seating_histogram_per_word'][word][customer_amount] -= 1
+                    break
+        self.state['customers_in_tables_with_label'][word] += 1
 
-    def _calculate_table_logprobs(self, token, token_logprob):
-        table_logprobs = []
-        # calculate probability of assigning to old table
-        for table_id in self.state['tables_with_word_label'][token]:
-            table_prob = torch.log(self.state['customers_per_table'][table_id]\
-                                        - self.state['alpha'])
-            table_logprobs.append((table_prob.item(), table_id))
-        # calculate probability of assigning to new table
-        new_table_logprob = torch.log(torch.Tensor([self.state['total_tables']*self.state['alpha']+\
-                                                        self.state['beta']])) + token_logprob
-        table_logprobs.append((new_table_logprob.item(), -1))
-        return table_logprobs
+    def customer_leaves(self, word):
+        customers_in_tables = self.state['customers_in_tables_with_label'][word]
+        random_draw = np.random.uniform(0, customers_in_tables)
+        for customer_amount in self.state['seating_histogram_per_word'][word]:
+            random_draw -= customer_amount * \
+                            self.state['seating_histogram_per_word'][word][customer_amount]
+            if random_draw <= 0:
+                self.state['seating_histogram_per_word'][word][customer_amount] -= 1
+                self.state['total_tables'] -= 1
+                self.state['tables_with_word_label'][word] -= 1
+                if customer_amount > 1:
+                    # in case the table is not empty after the customer leaves
+                    self.state['seating_histogram_per_word'][word][customer_amount-1] += 1
+                    self.state['total_tables'] += 1
+                    self.state['tables_with_word_label'][word] += 1
+                break
+        self.state['customers_in_tables_with_label'][word] -= 1
+
 
     def fit(self, generator, dataloader):
         self.state['dataset_length'] = len(dataloader)
@@ -145,24 +138,12 @@ class Adaptor:
                 token_id = token_ids[i].item()
                 token_indices = x[i][1:]
                 token = ''.join(self.state['alphabet'].idx2word(token_indices))
-                if token_id in self.state['table_assignments']:
-                    token_table_id = self.state['table_assignments'][token_id]
-                    # remove customer from table
-                    self.state['customers_per_table'][token_table_id] -= 1
-                    # if table is empty then don't associate with word anymore
-                    if self.state['customers_per_table'][token_table_id] == 0:
-                        self.state['tables_with_word_label'][token].remove(token_table_id)
-                        self.state['total_tables'] -= 1
-                table_logprobs = self._calculate_table_logprobs(token, token_logprob)
-                table_probs = self._normalise_table_probabilities(table_logprobs)
-                assigned_table_id = self._sample_new_table_assignment(table_probs)
-                # put customer to new table
-                self.state['customers_per_table'][assigned_table_id] += 1
-                # store info about amount of labels
-                self.state['tables_with_word_label'][token].add(assigned_table_id)
-                self.state['table_assignments'][token_id] = assigned_table_id
+                if self.state['assigned_to_table'][token_id]:
+                    self.customer_leaves(token)
+                self.customer_enters(token, token_logprob)
+                self.state['assigned_to_table'][token_id] = True
         if self.save_state:
             print('Saving adaptor state to', self.saved_state_folder)
-            self.save_fitted_state(dataloader)
+            self.save_fitted_state()
         print('Done fitting the adaptor')
         return self.state['tables_with_word_label']

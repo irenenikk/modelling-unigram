@@ -73,7 +73,7 @@ def train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, 
     for i in range(args.epochs):
         print('Iteration', i)
         # train generator
-        if len(tables_with_word_labels) > 0:
+        if tables_with_word_labels > 0:
             print('Training the generator with table label data')
             train_generator(generator, tables_with_word_labels,\
                                             devloader, args, alphabet)
