@@ -16,7 +16,7 @@ from util import util
 
 def get_args():
     argparser = get_argparser()
-    argparser.add_argument('--epochs', type=int, default=10)
+    argparser.add_argument('--epochs', type=int, default=5)
     # Data
     argparser.add_argument('--max-train-tokens', type=int)
     # Optimization

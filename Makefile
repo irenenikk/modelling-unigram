@@ -66,18 +66,18 @@ run_two_stage_type_evaluation: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_ST
 	echo "Eval models on types" $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE) 
 	mkdir -p $(RESULTS_DIR_LANG)
 	echo "Evaluate two-stage model initialised with a type generator"
-	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --results-file $(TWO_STAGE_INIT_TYPE_ON_TYPE_RESULTS_FILE) --batch-size 64 --dataset types
+	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --adaptor-results-file $(TWO_STAGE_INIT_TYPE_ON_TYPE_RESULTS_FILE) --batch-size 64 --dataset types
 	echo "Evaluate two-stage model initialised with a token generator"
-	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --results-file $(TWO_STAGE_INIT_TOKEN_ON_TYPE_RESULTS_FILE) --batch-size 64 --dataset types
+	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --adaptor-results-file $(TWO_STAGE_INIT_TOKEN_ON_TYPE_RESULTS_FILE) --batch-size 64 --dataset types
 
 # Eval two-stage model
 run_two_stage_token_evaluation: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
 	echo "Eval models on tokens" $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
 	echo "Evaluate two-stage model initialised with a type generator"
-	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --results-file $(TWO_STAGE_INIT_TYPE_ON_TOKEN_RESULTS_FILE) --batch-size 64 --dataset tokens
+	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --adaptor-results-file $(TWO_STAGE_INIT_TYPE_ON_TOKEN_RESULTS_FILE) --batch-size 64 --dataset tokens
 	echo "Evaluate two-stage model initialised with a token generator"
-	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --results-file $(TWO_STAGE_INIT_TOKEN_ON_TOKEN_RESULTS_FILE) --batch-size 64 --dataset tokens
+	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --adaptor-results-file $(TWO_STAGE_INIT_TOKEN_ON_TOKEN_RESULTS_FILE) --batch-size 64 --dataset tokens
 
 # Train two-stage model initialising with types
 run_two_stage_type_training: $(CHECKPOINT_TYPE_FILE)
