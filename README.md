@@ -21,15 +21,25 @@ $ python -m spacy download xx_ent_wiki_sm
 
 ## Running the code
 
-The code can be run using the command `make`. The language to use is defined in the `Makefile`.
+In order to run the full experiments pipeline for a given language, run
+
+```
+make all LANGUAGE=<wikipedia language code> MAX_TRAIN_TOKENS=<the amount of tokens to use in training>
+```
+
+You can also run the components of the experiments individually:
 
 `get_wiki`: Download and preprocess wikipedia data.
 
-`train`: Train the model.
+`train_generator`: Train the generator LSTM language model.
 
-`eval`: Train using both types and tokens and evaluate the models on the test set. Writes results to the results folder.
+`train_two_stage`: Train the two stage model consisting of a generator and an adaptor. Requires `train_generator` to be finished. The two-stage model is initialised both with a generator trained on tokens and one trained on types.
 
-You should train the generator for your language before training the two-stage model.
+`eval_generator`: Evaluate the different initialisations of the generator language model.
+
+`eval_two_stage`: Evaluate the different initialisations of the two-stage model.
+
+In evaluation the models are evaluated both using types and tokens.
 
 ## Contributing
 
