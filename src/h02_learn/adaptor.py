@@ -51,7 +51,8 @@ class Adaptor:
         total_tokens = 0
         for x, y, weights, _ in tqdm(dataloader, total=len(dataloader), \
                                     desc='Calculating adaptor cross entropy', mininterval=.2):
-            generator_logprobs = generator.get_word_log_probability(x, y)
+            with torch.no_grad():
+                generator_logprobs = generator.get_word_log_probability(x, y)
             for i, log_prob in enumerate(generator_logprobs):
                 # do not use the start of word index
                 token_indices = x[i][1:]
@@ -128,18 +129,19 @@ class Adaptor:
         self.state['customers_in_tables_with_label'][word] -= 1
 
 
-    def fit(self, generator, dataloader):
+    def fit(self, types_logprobs, dataloader):
+        """ The dictionary token_logprobs has the precalculated generator probability for each token. """
         self.state['dataset_length'] = len(dataloader)
-        for x, y, _, token_ids in tqdm(dataloader, total=len(dataloader), \
+        for x, _, _, token_ids in tqdm(dataloader, total=len(dataloader), \
                                     desc='Fitting adaptor', mininterval=.2):
-            tokens_logprobs = generator.get_word_log_probability(x, y)
             # iterate through tokens in batch:
-            for i, token_logprob in enumerate(tokens_logprobs):
-                token_id = token_ids[i].item()
-                token_indices = x[i][1:]
+            for all_token_indices, token_id in zip(x, token_ids):
+                token_indices = all_token_indices[1:]
+                # TODO: fetch token from the dataset
                 token = ''.join(self.state['alphabet'].idx2word(token_indices))
                 if self.state['assigned_to_table'][token_id]:
                     self.customer_leaves(token)
+                token_logprob = types_logprobs[token]
                 self.customer_enters(token, token_logprob)
                 self.state['assigned_to_table'][token_id] = True
         if self.save_state:
