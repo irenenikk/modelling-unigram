@@ -7,15 +7,6 @@ from .base import BaseDataset
 class TokenDataset(BaseDataset):
 
     def process_train(self, data):
-        # folds_data, alphabet, _ = data
-        # self.alphabet = alphabet
-        # self.word_freqs = [(word, info['count'])
-        #                    for fold in self.folds
-        #                    for word, info in folds_data[fold].items()]
-        # token_amount = sum([freq for _, freq in self.word_freqs])
-        # if self.max_tokens is not None and token_amount >= self.max_tokens:
-        #     self.word_freqs = self.subsample(self.word_freqs, self.max_tokens)
-
         self.word_freqs = self.get_folds_data(data)
         self.word_train, self.train_instances = self.build_token_list(self.word_freqs)
 
