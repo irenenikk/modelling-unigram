@@ -20,8 +20,9 @@ class BaseDataset(Dataset, ABC):
         folds_data, alphabet, _ = data
         self.alphabet = alphabet
         word_freqs = [(word, info['count'])
-                           for fold in self.folds
-                           for word, info in folds_data[fold].items()]
+                      for fold in self.folds
+                      for word, info in folds_data[fold].items()]
+
         n_tokens = sum([freq for _, freq in word_freqs])
         if self.max_tokens is not None and n_tokens >= self.max_tokens:
             word_freqs = self.subsample(word_freqs, self.max_tokens)
