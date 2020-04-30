@@ -42,7 +42,7 @@ def get_model(alphabet, args):
 def train_batch(x, y, model, optimizer):
     optimizer.zero_grad()
     y_hat = model(x)
-    loss = model.get_loss(y_hat, y).sum()
+    loss = model.get_loss(y_hat, y).sum(-1).mean()
     loss.backward()
     optimizer.step()
     return loss.item()
