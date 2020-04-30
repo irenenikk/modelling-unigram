@@ -1,7 +1,5 @@
-import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from torch.utils.data.sampler import SubsetRandomSampler
 
 from util import constants
 from util import util
@@ -55,6 +53,7 @@ def load_data(fname):
 def get_alphabet(data):
     _, alphabet, _ = data
     return alphabet
+
 
 def get_data_loader(dataset, batch_size, shuffle=True):
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
