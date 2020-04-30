@@ -131,9 +131,9 @@ def main():
     training_time = end - start
 
     print('Getting generator training loss')
-    generator_train_loss = evaluate_generator(trainloader, generator, alphabet)
+    generator_train_loss = evaluate_generator(trainloader, generator)
     print('Getting generator dev loss')
-    generator_dev_loss = evaluate_generator(devloader, generator, alphabet)
+    generator_dev_loss = evaluate_generator(devloader, generator)
 
     print('Generator training loss: %.4f Dev loss: %.4f' %
           (generator_train_loss, generator_dev_loss))
