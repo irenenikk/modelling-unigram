@@ -58,7 +58,6 @@ class Adaptor:
                 generator_logprobs = generator.get_word_log_probability(x, y)
             for i, log_prob in enumerate(generator_logprobs):
                 # do not use the start of word index
-                token_indices = x[i][1:]
                 token = tokens[i]
                 word_logprob = self.get_token_probability(log_prob, token)
                 entropy += -word_logprob * weights[i]
@@ -131,15 +130,13 @@ class Adaptor:
 
 
     def fit(self, types_logprobs, dataloader):
-        """ The dictionary token_logprobs has the precalculated generator probability for each token. """
+        """
+        The dictionary token_logprobs has the precalculated generator probability for each token.
+        """
         self.state['dataset_length'] = len(dataloader.dataset)
-        for x, _, _, token_ids, tokens in tqdm(dataloader, total=len(dataloader), \
+        for _, _, _, token_ids, tokens in tqdm(dataloader, total=len(dataloader), \
                                     desc='Fitting adaptor', mininterval=.2):
-            # iterate through tokens in batch:
-            for i, all_token_indices in enumerate(x):
-                token_indices = all_token_indices[1:]
-                token_id = token_ids[i]
-                token = tokens[i]
+            for token, token_id in zip(tokens, token_ids):
                 if self.state['assigned_to_table'][token_id]:
                     self.customer_leaves(token)
                 token_logprob = types_logprobs[token]

@@ -5,13 +5,14 @@ import numpy as np
 
 class TypesFromTokensDataset(Dataset):
 
-    def __init__(self, token_dataloader, alphabet):
+    def __init__(self, token_dataloader):
         self.types = {}
         self.type_indices = []
         self.type_weights = []
         self.type_ids = []
         self.type_words = []
-        for batch_x, batch_y, weights, ids, tokens in tqdm(token_dataloader, total=len(token_dataloader), \
+        for batch_x, batch_y, weights, ids, tokens in \
+                                tqdm(token_dataloader, total=len(token_dataloader), \
                                 desc='Building type dataset from tokens', mininterval=.2):
             for i, x in enumerate(batch_x):
                 word = tokens[i]
@@ -30,4 +31,5 @@ class TypesFromTokensDataset(Dataset):
         return len(self.type_indices)
 
     def __getitem__(self, index):
-        return self.type_indices[index], self.type_weights[index], self.type_ids[index], self.type_words[index]
+        return self.type_indices[index], self.type_weights[index], \
+                self.type_ids[index], self.type_words[index]
