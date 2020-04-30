@@ -28,7 +28,7 @@ def get_args():
 
 def load_generator(alphabet, checkpoints_path):
     generator = LstmLM.load(checkpoints_path)
-    generator.ignore_index = alphabet.char2idx('PAD')
+    generator.ignore_index = alphabet.PAD_IDX
     generator.to(device=constants.device)
     return generator
 

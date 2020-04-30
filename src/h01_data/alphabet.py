@@ -1,5 +1,7 @@
 
 class Alphabet:
+    PAD_IDX = 0
+
     def __init__(self):
         self._chars2idx = {
             'PAD': 0,
