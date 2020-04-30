@@ -49,7 +49,7 @@ class BaseLM(nn.Module):
         checkpoints = cls.load_checkpoint(path)
         model = cls(**checkpoints['kwargs'])
         model.load_state_dict(checkpoints['model_state_dict'])
-        return model
+        return model.to(device=constants.device)
 
     @classmethod
     def load_checkpoint(cls, path):

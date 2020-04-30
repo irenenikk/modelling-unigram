@@ -120,7 +120,7 @@ def main():
 
     start = time.time()
 
-    generator = load_generator(alphabet, args.generator_path)
+    generator = load_generator(args.generator_path)
     initial_state = Adaptor.get_initial_state(args.alpha, args.beta, alphabet)
     adaptor = Adaptor(initial_state, state_folder=args.two_stage_state_folder)
     two_stage_dev_loss = \

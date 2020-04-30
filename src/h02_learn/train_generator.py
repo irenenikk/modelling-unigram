@@ -28,8 +28,7 @@ def get_args():
 
 
 def load_generator(checkpoints_path):
-    generator = LstmLM.load(checkpoints_path)
-    return generator
+    return LstmLM.load(checkpoints_path)
 
 
 def get_model(alphabet, args):
