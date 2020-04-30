@@ -3,7 +3,6 @@ import sys
 import os
 import torch
 from tqdm import tqdm
-from torch.utils.data import TensorDataset, DataLoader
 
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
@@ -72,7 +71,8 @@ def train_generator(generator, tables_with_word_labels, token_devloader, args, a
     generator.save(args.two_stage_state_folder)
     print('Generator dev loss', generator_dev_loss)
 
-def train_two_stage_model(generator, adaptor, token_trainloader, token_devloader, token_alphabet, type_trainloader, args):
+def train_two_stage_model(generator, adaptor, token_trainloader, token_devloader, token_alphabet,\
+                            type_trainloader, args):
     tables_with_word_labels = adaptor.state['tables_with_word_label']
     for i in range(args.epochs):
         print('Iteration', i)
@@ -86,7 +86,8 @@ def train_two_stage_model(generator, adaptor, token_trainloader, token_devloader
         # train adaptor
         print('Training the adaptor')
         tables_with_word_labels, two_stage_dev_loss = \
-            train_adaptor(adaptor, generator, types_logprobs, token_trainloader, token_devloader, args.adaptor_iterations)
+            train_adaptor(adaptor, generator, types_logprobs, \
+                            token_trainloader, token_devloader, args.adaptor_iterations)
     return two_stage_dev_loss
 
 def save_two_stage_training_results(model, args, train_loss, dev_loss, generator_dev_loss,\
@@ -113,12 +114,26 @@ def precalculate_types_logprobs(generator, type_dataloader):
         for x, y, _, _, tokens in tqdm(type_dataloader, total=len(type_dataloader), \
                             desc='Precalculating type logprobs', mininterval=.2):
             logprobs = generator.get_word_log_probability(x, y)
-            for i, all_type_indices in enumerate(x):
-                type_logprob = logprobs[i]
-                type_indices = all_type_indices[1:]
-                word = tokens[i]
+            for type_logprob, word in zip(logprobs, tokens):
                 types_logprobs[word] = type_logprob
     return types_logprobs
+
+def initiate_two_stage_training(token_trainloader, token_devloader, token_alphabet, args):
+    types_from_tokens = TypesFromTokensDataset(token_trainloader)
+    type_trainloader = get_data_loader(types_from_tokens, batch_size=64, shuffle=False)
+
+    start = time.time()
+
+    generator = load_generator(token_alphabet, args.generator_path)
+    initial_state = Adaptor.get_initial_state(args.alpha, args.beta)
+    adaptor = Adaptor(initial_state, state_folder=args.two_stage_state_folder)
+    two_stage_dev_loss = \
+        train_two_stage_model(generator, adaptor, token_trainloader, token_devloader,\
+                                token_alphabet, type_trainloader, args)
+
+    end = time.time()
+    training_time = end - start
+    return generator, adaptor, two_stage_dev_loss, training_time
 
 def main():
     args = get_args()
@@ -128,22 +143,11 @@ def main():
         get_data_loaders_with_folds('tokens', args.data_file, folds,\
                                         args.batch_size, max_train_tokens=args.max_train_tokens)
 
-    types_from_tokens = TypesFromTokensDataset(token_trainloader, token_alphabet)
-    type_trainloader = get_data_loader(types_from_tokens, batch_size=64, shuffle=False)
-
     print('Train size: %d Dev size: %d' %
           (len(token_trainloader.dataset), len(token_devloader.dataset)))
 
-    start = time.time()
-
-    generator = load_generator(token_alphabet, args.generator_path)
-    initial_state = Adaptor.get_initial_state(args.alpha, args.beta)
-    adaptor = Adaptor(initial_state, state_folder=args.two_stage_state_folder)
-    two_stage_dev_loss = \
-        train_two_stage_model(generator, adaptor, token_trainloader, token_devloader, token_alphabet, type_trainloader, args)
-
-    end = time.time()
-    training_time = end - start
+    generator, adaptor, two_stage_dev_loss, training_time = \
+        initiate_two_stage_training(token_trainloader, token_devloader, token_alphabet, args)
 
     print('Getting generator training loss')
     generator_train_loss = evaluate_generator(token_trainloader, generator, token_alphabet)

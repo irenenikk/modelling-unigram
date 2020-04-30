@@ -14,7 +14,8 @@ class TokenDataset(BaseDataset):
                            for word, info in folds_data[fold].items()]
         if self.max_tokens is not None:
             self.word_freqs = self.subsample(self.word_freqs, self.max_tokens)
-        self.word_train, self.token_train, self.train_instances = self.build_token_list(self.word_freqs)
+        self.word_train, self.token_train, self.train_instances = \
+                                                self.build_token_list(self.word_freqs)
 
     def process_eval(self, data):
         self.word_eval = [torch.LongTensor(self.get_word_idx(word)) for word, _ in self.word_freqs]

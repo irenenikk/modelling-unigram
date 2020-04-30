@@ -2,8 +2,9 @@ import sys
 import numpy as np
 
 sys.path.append('./src/')
-from h02_learn.dataset import get_data_loaders_with_folds
+from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
 from h02_learn.train_two_stage import train_two_stage_model, load_generator, Adaptor
+from h02_learn.dataset.types_from_tokens import TypesFromTokensDataset
 from h03_eval.eval_two_stage import evaluate_adaptor
 from util.argparser import get_argparser, parse_args
 from util import util
@@ -39,15 +40,18 @@ def construct_pitman_yor_tuning_results(model, alpha, beta, train_loss, dev_loss
 
 def tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas):
     # pylint: disable=too-many-locals
+    types_from_tokens = TypesFromTokensDataset(trainloader)
+    type_trainloader = get_data_loader(types_from_tokens, batch_size=64, shuffle=False)
     best_loss = 1e5
     best_params = None
     for alpha in alphas:
         for beta in betas:
             generator = load_generator(alphabet, args.generator_path)
-            initial_state = Adaptor.get_initial_state(alpha, beta, alphabet)
+            initial_state = Adaptor.get_initial_state(alpha, beta)
             adaptor = Adaptor(initial_state, args.two_stage_state_folder, save_state=False)
             dev_loss = \
-                train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, args)
+                train_two_stage_model(generator, adaptor, trainloader, devloader, \
+                                        alphabet, type_trainloader, args)
             print('Adaptor dev loss', dev_loss, 'with a =', alpha, ', b =', beta)
             if dev_loss < best_loss:
                 print('New best loss')
