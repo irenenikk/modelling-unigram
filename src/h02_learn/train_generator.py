@@ -1,6 +1,6 @@
 import sys
 import torch
-import torch.nn as nn
+# import torch.nn as nn
 import torch.optim as optim
 
 sys.path.append('./src/')
@@ -27,7 +27,7 @@ def get_args():
     return args
 
 
-def load_generator(alphabet, checkpoints_path):
+def load_generator(checkpoints_path):
     generator = LstmLM.load(checkpoints_path)
     return generator
 
@@ -109,21 +109,17 @@ def save_checkpoints(model, train_loss, dev_loss, train_size, dev_size, checkpoi
     save_results(model, train_loss, dev_loss, train_size, dev_size, results_fname)
 
 def main():
-    # pylint: disable=all
     args = get_args()
     folds = [list(range(8)), [8], [9]]
 
-    trainloader, devloader, alphabet = \
-        get_data_loaders_with_folds(args.dataset, args.data_file, folds,\
-                                        args.batch_size, max_train_tokens=args.max_train_tokens)
+    trainloader, devloader, alphabet = get_data_loaders_with_folds(
+        args.dataset, args.data_file, folds,
+        args.batch_size, max_train_tokens=args.max_train_tokens)
 
     print('Train size: %d Dev size: %d ' %
           (len(trainloader.dataset), len(devloader.dataset)))
 
     model = get_model(alphabet, args)
-    # criterion = nn.CrossEntropyLoss(ignore_index=alphabet.PAD_IDX, reduction='none') \
-    #     .to(device=constants.device)
-
     train(trainloader, devloader, model, args.eval_batches, args.wait_iterations)
 
     train_loss = evaluate(trainloader, model)
