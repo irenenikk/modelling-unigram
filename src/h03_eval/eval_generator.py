@@ -6,6 +6,7 @@ import torch.nn as nn
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.model import LstmLM
+from h02_learn.train_generator import evaluate
 from util.argparser import get_argparser, parse_args
 from util import util
 from util import constants
@@ -24,28 +25,6 @@ def get_args():
 def load_model(fpath):
     return LstmLM.load(fpath).to(device=constants.device)
 
-def _evaluate(evalloader, model, alphabet):
-    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD'), reduction='none') \
-        .to(device=constants.device)
-
-    dev_loss, n_instances = 0, 0
-    for x, y, weights, _ in evalloader:
-        y_hat = model(x)
-        loss = criterion(y_hat.reshape(-1, y_hat.shape[-1]), y.reshape(-1))\
-            .reshape_as(y).sum(-1)
-        dev_loss += (loss * weights).sum()
-        n_instances += weights.sum()
-
-    return (dev_loss / n_instances).item()
-
-def evaluate_generator(evalloader, model, alphabet):
-    model.eval()
-    evalloader.dataset.eval()
-    with torch.no_grad():
-        result = _evaluate(evalloader, model, alphabet)
-    model.train()
-    evalloader.dataset.train()
-    return result
 
 def eval_all(model_paths, dataloaders):
     results = [['model', 'dataset', 'train_loss', 'dev_loss', 'test_loss']]
@@ -56,13 +35,13 @@ def eval_all(model_paths, dataloaders):
         model_name = model_path.split('/')[-1]
 
         for dataset, dataloader in dataloaders.items():
-            trainloader, devloader, testloader, alphabet = dataloader
+            trainloader, devloader, testloader, _ = dataloader
             print('Evaluating model: %s on dataset: %s' %
                   (model_name, dataset))
 
-            train_loss = evaluate_generator(trainloader, model, alphabet)
-            dev_loss = evaluate_generator(devloader, model, alphabet)
-            test_loss = evaluate_generator(testloader, model, alphabet)
+            train_loss = evaluate(trainloader, model)
+            dev_loss = evaluate(devloader, model)
+            test_loss = evaluate(testloader, model)
 
             print('Final %s Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
                   (dataset, train_loss, dev_loss, test_loss))
