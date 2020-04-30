@@ -17,10 +17,10 @@ from util import util
 
 def get_args():
     argparser = get_argparser()
-    argparser.add_argument('--epochs', type=int, default=5)
     # Data
     argparser.add_argument('--max-train-tokens', type=int)
     # Optimization
+    argparser.add_argument('--epochs', type=int, default=5)
     argparser.add_argument('--eval-batches', type=int, default=200)
     argparser.add_argument('--wait-epochs', type=int, default=5)
     # Save
@@ -32,6 +32,7 @@ def get_args():
     argparser.add_argument('--adaptor-iterations', type=int, default=6)
     argparser.add_argument('--two-stage-state-folder', type=str, required=True)
     argparser.add_argument('--load-adaptor-init-state', default=False, action='store_true')
+
     args = parse_args(argparser)
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
@@ -67,7 +68,7 @@ def train_generator(generator, tables_with_word_labels, devloader, args, alphabe
     tables_with_word_labels_dataset = TableLabelDataset(tables_with_word_labels, alphabet)
     table_label_dataloader = get_data_loader(tables_with_word_labels_dataset,\
                                                 args.batch_size)
-    _, generator_dev_loss = train(table_label_dataloader, devloader, generator, alphabet,\
+    _, generator_dev_loss = train(table_label_dataloader, devloader, generator,\
                                     args.eval_batches, args.wait_iterations)
     generator.save(args.two_stage_state_folder)
     print('Generator dev loss', generator_dev_loss)
@@ -113,7 +114,7 @@ def main():
 
     trainloader, devloader, alphabet = \
         get_data_loaders_with_folds(args.dataset, args.data_file, folds,\
-                                        args.batch_size, max_train_tokens=args.max_train_tokens)
+                                    args.batch_size, max_train_tokens=args.max_train_tokens)
 
     print('Train size: %d Dev size: %d' %
           (len(trainloader.dataset), len(devloader.dataset)))
@@ -121,8 +122,8 @@ def main():
     start = time.time()
 
     generator = load_generator(args.generator_path)
-    initial_state = Adaptor.get_initial_state(args.alpha, args.beta, alphabet)
-    adaptor = Adaptor(initial_state, state_folder=args.two_stage_state_folder)
+    # initial_state = Adaptor.get_initial_state(args.alpha, args.beta, alphabet)
+    adaptor = Adaptor(args.alpha, args.beta, alphabet, state_folder=args.two_stage_state_folder)
     two_stage_dev_loss = \
         train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, args)
 
