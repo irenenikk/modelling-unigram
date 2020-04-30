@@ -153,10 +153,10 @@ class Adaptor:
     def save_fitted_state(self, dataloader, state_folder=None):
         customers_in_tables_with_label = self.count_customers_in_tables_with_label(dataloader)
         self.state['customers_in_tables_with_label'] = customers_in_tables_with_label
-        saved_state_folder = state_folder
+
         if state_folder is None:
-            saved_state_folder = self.saved_state_folder
-        adaptor_state_file = self.get_state_file(saved_state_folder)
+            state_folder = self.saved_state_folder
+        adaptor_state_file = self.get_state_file(state_folder)
         write_data(adaptor_state_file, self.get_checkpoint())
 
     @classmethod
