@@ -44,9 +44,11 @@ class BaseDataset(Dataset, ABC):
         return self.eval_instances
 
     def __getitem__(self, index):
-        word = self.word_train[index] if self._train else self.word_eval[index]
+        word_indices = self.word_train[index] if self._train else self.word_eval[index]
         weight = torch.Tensor([1]) if self._train else self.weights[index]
-        return (word, weight, index)
+        token = self.token_train[index] if self._train else self.token_eval[index]
+        # return token here
+        return (word_indices, weight, index, token)
 
     def train(self):
         self._train = True

@@ -82,7 +82,7 @@ def train_two_stage_model(generator, adaptor, token_trainloader, token_devloader
             train_generator(generator, tables_with_word_labels,\
                                             token_devloader, args, token_alphabet)
         # precalculate the type logprobs
-        types_logprobs = precalculate_types_logprobs(generator, type_trainloader, token_alphabet)
+        types_logprobs = precalculate_types_logprobs(generator, type_trainloader)
         # train adaptor
         print('Training the adaptor')
         tables_with_word_labels, two_stage_dev_loss = \
@@ -106,16 +106,17 @@ def save_two_stage_training_results(model, args, train_loss, dev_loss, generator
                 training_time, train_size, dev_size]]
     util.write_csv(results_fname, results)
 
-def precalculate_types_logprobs(generator, type_dataloader, alphabet):
+def precalculate_types_logprobs(generator, type_dataloader):
     types_logprobs = {}
     generator.eval()
     with torch.no_grad():
-        for x, y, _, _ in tqdm(type_dataloader, total=len(type_dataloader), \
+        for x, y, _, _, tokens in tqdm(type_dataloader, total=len(type_dataloader), \
                             desc='Precalculating type logprobs', mininterval=.2):
             logprobs = generator.get_word_log_probability(x, y)
-            for all_type_indices, type_logprob in zip(x, logprobs):
+            for i, all_type_indices in enumerate(x):
+                type_logprob = logprobs[i]
                 type_indices = all_type_indices[1:]
-                word = ''.join(alphabet.idx2word(type_indices))
+                word = tokens[i]
                 types_logprobs[word] = type_logprob
     return types_logprobs
 
@@ -136,7 +137,7 @@ def main():
     start = time.time()
 
     generator = load_generator(token_alphabet, args.generator_path)
-    initial_state = Adaptor.get_initial_state(args.alpha, args.beta, token_alphabet)
+    initial_state = Adaptor.get_initial_state(args.alpha, args.beta)
     adaptor = Adaptor(initial_state, state_folder=args.two_stage_state_folder)
     two_stage_dev_loss = \
         train_two_stage_model(generator, adaptor, token_trainloader, token_devloader, token_alphabet, type_trainloader, args)
