@@ -15,7 +15,8 @@
 disable=missing-docstring,
         wrong-import-position,
         attribute-defined-outside-init,
-        too-many-instance-attributes
+        too-many-instance-attributes,
+        len-as-condition
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
