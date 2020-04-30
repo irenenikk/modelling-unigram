@@ -52,7 +52,7 @@ def train_batch(x, y, model, optimizer, criterion):
 def train(trainloader, devloader, model, alphabet, eval_batches, wait_iterations):
     # optimizer = optim.AdamW(model.parameters())
     optimizer = optim.Adam(model.parameters())
-    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.char2idx('PAD'), reduction='none') \
+    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.PAD_IDX, reduction='none') \
         .to(device=constants.device)
     train_info = TrainInfo(wait_iterations, eval_batches)
 
