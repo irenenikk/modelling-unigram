@@ -37,11 +37,11 @@ def get_args():
     return args
 
 
-def get_model(alphabet, args):
-    return LstmLM(
-        len(alphabet), args.embedding_size, args.hidden_size,
-        nlayers=args.nlayers, dropout=args.dropout, ignore_index=alphabet.char2idx('PAD')) \
-        .to(device=constants.device)
+# def get_model(alphabet, args):
+#     return LstmLM(
+#         len(alphabet), args.embedding_size, args.hidden_size,
+#         nlayers=args.nlayers, dropout=args.dropout, ignore_index=alphabet.char2idx('PAD')) \
+#         .to(device=constants.device)
 
 
 def train_adaptor(adaptor, generator, trainloader, devloader, adaptor_iterations):
