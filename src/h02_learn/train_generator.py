@@ -52,7 +52,7 @@ def train(trainloader, devloader, model, eval_batches, wait_iterations):
     train_info = TrainInfo(wait_iterations, eval_batches)
 
     while not train_info.finish:
-        for x, y, _, _ in trainloader:
+        for x, y, _, _, _ in trainloader:
             loss = train_batch(x, y, model, optimizer)
             train_info.new_batch(loss)
 

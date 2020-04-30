@@ -52,15 +52,15 @@ class Adaptor:
     def calculate_cross_entropy(self, dataloader, generator):
         entropy = 0
         total_tokens = 0
-        for x, y, weights, _ in tqdm(dataloader, total=len(dataloader), \
+        for x, y, weights, _, tokens in tqdm(dataloader, total=len(dataloader), \
                                     desc='Calculating adaptor cross entropy', mininterval=.2):
             with torch.no_grad():
                 generator_logprobs = generator.get_word_log_probability(x, y)
             for i, log_prob in enumerate(generator_logprobs):
                 # do not use the start of word index
                 token_indices = x[i][1:]
-                token = ''.join(self.state['alphabet'].idx2word(token_indices))
-                word_logprob = self.get_token_logprobability(log_prob, token)
+                token = tokens[i]
+                word_logprob = self.get_token_probability(log_prob, token)
                 entropy += -word_logprob * weights[i]
                 total_tokens += weights[i]
         return (entropy / total_tokens).item()
@@ -133,13 +133,13 @@ class Adaptor:
     def fit(self, types_logprobs, dataloader):
         """ The dictionary token_logprobs has the precalculated generator probability for each token. """
         self.state['dataset_length'] = len(dataloader.dataset)
-        for x, _, _, token_ids in tqdm(dataloader, total=len(dataloader), \
+        for x, _, _, token_ids, tokens in tqdm(dataloader, total=len(dataloader), \
                                     desc='Fitting adaptor', mininterval=.2):
             # iterate through tokens in batch:
-            for all_token_indices, token_id in zip(x, token_ids):
+            for i, all_token_indices in enumerate(x):
                 token_indices = all_token_indices[1:]
-                # TODO: fetch token from the dataset
-                token = ''.join(self.state['alphabet'].idx2word(token_indices))
+                token_id = token_ids[i]
+                token = tokens[i]
                 if self.state['assigned_to_table'][token_id]:
                     self.customer_leaves(token)
                 token_logprob = types_logprobs[token]

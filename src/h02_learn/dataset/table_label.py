@@ -21,4 +21,4 @@ class TableLabelDataset(Dataset):
                                         self.alphabet.word2idx(word) + \
                                         [self.alphabet.char2idx('EOS')])
         weight = torch.Tensor([1])
-        return (word_indices, weight, index)
+        return (word_indices, weight, index, word)

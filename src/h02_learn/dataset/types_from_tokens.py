@@ -10,10 +10,11 @@ class TypesFromTokensDataset(Dataset):
         self.type_indices = []
         self.type_weights = []
         self.type_ids = []
-        for batch_x, batch_y, weights, ids in tqdm(token_dataloader, total=len(token_dataloader), \
+        self.type_words = []
+        for batch_x, batch_y, weights, ids, tokens in tqdm(token_dataloader, total=len(token_dataloader), \
                                 desc='Building type dataset from tokens', mininterval=.2):
             for i, x in enumerate(batch_x):
-                word = ''.join(alphabet.idx2word(x[1:]))
+                word = tokens[i]
                 if word in self.types:
                     continue
                 self.types[word] = True
@@ -23,9 +24,10 @@ class TypesFromTokensDataset(Dataset):
                 self.type_indices.append(torch.cat((x[x > 0], torch.unsqueeze(last_char, 0))))
                 self.type_weights.append(torch.unsqueeze(weights[i], 0))
                 self.type_ids.append(ids[i])
+                self.type_words.append(word)
 
     def __len__(self):
         return len(self.type_indices)
 
     def __getitem__(self, index):
-        return self.type_indices[index], self.type_weights[index], self.type_ids[index]
+        return self.type_indices[index], self.type_weights[index], self.type_ids[index], self.type_words[index]
