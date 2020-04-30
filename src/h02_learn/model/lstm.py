@@ -25,6 +25,10 @@ class LstmLM(BaseLM):
         # Tie weights
         self.out.weight = self.embedding.weight
 
+        self.criterion = nn.CrossEntropyLoss(
+            ignore_index=self.ignore_index, reduction='none') \
+            .to(device=constants.device)
+
     def forward(self, x):
         x_emb = self.dropout(self.embedding(x))
 
@@ -35,10 +39,15 @@ class LstmLM(BaseLM):
         logits = self.out(hidden)
         return logits
 
+    def get_loss(self, logits, y):
+        return self.criterion(
+            logits.reshape(-1, logits.shape[-1]),
+            y.reshape(-1)) \
+            .reshape_as(y)
+
     def get_word_log_probability(self, x, y):
-        criterion = nn.CrossEntropyLoss(ignore_index=self.ignore_index,\
-                                        reduction='none').to(device=constants.device)
+        # criterion = nn.CrossEntropyLoss(ignore_index=self.ignore_index,\
+        #                                 reduction='none').to(device=constants.device)
         logits = self(x)
-        logprobs = criterion(logits.reshape(-1, logits.shape[-1]),\
-                                y.reshape(-1)).reshape_as(y).sum(-1)
+        logprobs = self.get_loss(logits, y).sum(-1)
         return -logprobs

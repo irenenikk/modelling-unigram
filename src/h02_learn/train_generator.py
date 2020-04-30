@@ -41,26 +41,26 @@ def get_model(alphabet, args):
         .to(device=constants.device)
 
 
-def train_batch(x, y, model, optimizer, criterion):
+def train_batch(x, y, model, optimizer):
     optimizer.zero_grad()
     y_hat = model(x)
-    loss = criterion(y_hat.reshape(-1, y_hat.shape[-1]), y.reshape(-1)).sum(-1)
+    loss = model.get_loss(y_hat, y).sum()
     loss.backward()
     optimizer.step()
     return loss.item()
 
 
-def train(trainloader, devloader, model, criterion, eval_batches, wait_iterations):
+def train(trainloader, devloader, model, eval_batches, wait_iterations):
     optimizer = optim.AdamW(model.parameters())
     train_info = TrainInfo(wait_iterations, eval_batches)
 
     while not train_info.finish:
         for x, y, _, _ in trainloader:
-            loss = train_batch(x, y, model, optimizer, criterion)
+            loss = train_batch(x, y, model, optimizer)
             train_info.new_batch(loss)
 
             if train_info.eval:
-                dev_loss = evaluate(devloader, model, criterion)
+                dev_loss = evaluate(devloader, model)
 
                 if train_info.is_best(dev_loss):
                     model.set_best()
@@ -73,24 +73,22 @@ def train(trainloader, devloader, model, criterion, eval_batches, wait_iteration
     return loss, dev_loss
 
 
-def _evaluate(evalloader, model, criterion):
-
+def _evaluate(evalloader, model):
     dev_loss, n_instances = 0, 0
     for x, y, weights, _ in evalloader:
         y_hat = model(x)
-        loss = criterion(y_hat.reshape(-1, y_hat.shape[-1]), y.reshape(-1))\
-            .reshape_as(y).sum(-1)
+        loss = model.get_loss(y_hat, y).sum(-1)
         dev_loss += (loss * weights).sum()
         n_instances += weights.sum()
 
     return (dev_loss / n_instances).item()
 
 
-def evaluate(evalloader, model, criterion):
+def evaluate(evalloader, model):
     model.eval()
     evalloader.dataset.eval()
     with torch.no_grad():
-        result = _evaluate(evalloader, model, criterion)
+        result = _evaluate(evalloader, model)
     model.train()
     evalloader.dataset.train()
     return result
@@ -124,13 +122,13 @@ def main():
           (len(trainloader.dataset), len(devloader.dataset)))
 
     model = get_model(alphabet, args)
-    criterion = nn.CrossEntropyLoss(ignore_index=alphabet.PAD_IDX, reduction='none') \
-        .to(device=constants.device)
+    # criterion = nn.CrossEntropyLoss(ignore_index=alphabet.PAD_IDX, reduction='none') \
+    #     .to(device=constants.device)
 
-    train(trainloader, devloader, model, criterion, args.eval_batches, args.wait_iterations)
+    train(trainloader, devloader, model, args.eval_batches, args.wait_iterations)
 
-    train_loss = evaluate(trainloader, model, criterion)
-    dev_loss = evaluate(devloader, model, criterion)
+    train_loss = evaluate(trainloader, model)
+    dev_loss = evaluate(devloader, model)
 
     print('Final Training loss: %.4f Dev loss: %.4f ' %
           (train_loss, dev_loss))
