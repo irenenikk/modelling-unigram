@@ -12,7 +12,8 @@ class TypeDataset(BaseDataset):
         word_freqs = [(word, info['count'])
                       for fold in self.folds
                       for word, info in folds_data[fold].items()]
-        if self.max_tokens is not None:
+        token_amount = sum([freq for _, freq in word_freqs])
+        if self.max_tokens is not None and token_amount >= self.max_tokens:
             word_freqs = self.subsample(word_freqs, self.max_tokens)
         self.words = [word for word, _ in word_freqs]
         self.word_train = [torch.LongTensor(self.get_word_idx(word)) for word in self.words]
