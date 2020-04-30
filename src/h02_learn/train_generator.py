@@ -13,22 +13,25 @@ from util import constants
 
 
 def get_args():
-    # Optimization
     argparser = get_argparser()
+    # Optimization
     argparser.add_argument('--eval-batches', type=int, default=200)
     argparser.add_argument('--wait-epochs', type=int, default=5)
     # Save
     argparser.add_argument('--generator-path', type=str)
     argparser.add_argument('--max-train-tokens', type=int)
+
     args = parse_args(argparser)
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
+
 
 def load_generator(alphabet, checkpoints_path):
     generator = LstmLM.load(checkpoints_path)
     generator.ignore_index = alphabet.char2idx('PAD')
     generator.to(device=constants.device)
     return generator
+
 
 def get_model(alphabet_size, args):
     return LstmLM(
