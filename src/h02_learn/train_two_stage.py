@@ -6,13 +6,14 @@ sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
 from h02_learn.model import LstmLM
 from h02_learn.train_generator import train, load_generator
+from h02_learn.train_generator import evaluate as evaluate_generator
 from h02_learn.dataset.table_label import TableLabelDataset
 from h02_learn.adaptor import Adaptor
-from h03_eval.eval_generator import evaluate_generator
 from h03_eval.eval_two_stage import evaluate_adaptor
 from util.argparser import get_argparser, parse_args
 from util import constants
 from util import util
+
 
 def get_args():
     argparser = get_argparser()
@@ -35,11 +36,13 @@ def get_args():
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
 
+
 def get_model(alphabet, args):
     return LstmLM(
         len(alphabet), args.embedding_size, args.hidden_size,
         nlayers=args.nlayers, dropout=args.dropout, ignore_index=alphabet.char2idx('PAD')) \
         .to(device=constants.device)
+
 
 def train_adaptor(adaptor, generator, trainloader, devloader, adaptor_iterations):
     """ Train and recover the state performing the best on development set """
@@ -58,6 +61,7 @@ def train_adaptor(adaptor, generator, trainloader, devloader, adaptor_iterations
     adaptor.set_state(best_state)
     return best_tables_with_word_labels, min_dev_loss
 
+
 def train_generator(generator, tables_with_word_labels, devloader, args, alphabet):
     generator.train()
     tables_with_word_labels_dataset = TableLabelDataset(tables_with_word_labels, alphabet)
@@ -67,6 +71,7 @@ def train_generator(generator, tables_with_word_labels, devloader, args, alphabe
                                     args.eval_batches, args.wait_iterations)
     generator.save(args.two_stage_state_folder)
     print('Generator dev loss', generator_dev_loss)
+
 
 def train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, args):
     tables_with_word_labels = adaptor.state['tables_with_word_label']
@@ -82,6 +87,7 @@ def train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, 
         tables_with_word_labels, two_stage_dev_loss = \
             train_adaptor(adaptor, generator, trainloader, devloader, args.adaptor_iterations)
     return two_stage_dev_loss
+
 
 def save_two_stage_training_results(model, args, train_loss, dev_loss, generator_dev_loss,\
                                         training_time, train_size, dev_size):
@@ -99,6 +105,7 @@ def save_two_stage_training_results(model, args, train_loss, dev_loss, generator
                 generator_dev_loss, args.epochs, args.adaptor_iterations,\
                 training_time, train_size, dev_size]]
     util.write_csv(results_fname, results)
+
 
 def main():
     args = get_args()
