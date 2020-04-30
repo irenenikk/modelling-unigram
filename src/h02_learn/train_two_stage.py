@@ -66,10 +66,10 @@ def train_adaptor(adaptor, generator, trainloader, devloader, adaptor_iterations
 def train_generator(generator, tables_with_word_labels, devloader, args, alphabet):
     generator.train()
     tables_with_word_labels_dataset = TableLabelDataset(tables_with_word_labels, alphabet)
-    table_label_dataloader = get_data_loader(tables_with_word_labels_dataset,\
-                                                args.batch_size)
+    table_label_dataloader = get_data_loader(tables_with_word_labels_dataset,
+                                             args.batch_size)
     _, generator_dev_loss = train(table_label_dataloader, devloader, generator,\
-                                    args.eval_batches, args.wait_iterations)
+                                  args.eval_batches, args.wait_iterations)
     generator.save(args.two_stage_state_folder)
     print('Generator dev loss', generator_dev_loss)
 
@@ -81,8 +81,8 @@ def train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, 
         # train generator
         if len(tables_with_word_labels) > 0:
             print('Training the generator with table label data')
-            train_generator(generator, tables_with_word_labels,\
-                                            devloader, args, alphabet)
+            train_generator(generator, tables_with_word_labels,
+                            devloader, args, alphabet)
         # train adaptor
         print('Training the adaptor')
         tables_with_word_labels, two_stage_dev_loss = \
