@@ -8,12 +8,7 @@ from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
 from h02_learn.train_generator import train, load_generator
 from h02_learn.train_generator import evaluate as evaluate_generator
 from h02_learn.dataset.table_label import TableLabelDataset
-<<<<<<< HEAD
-from h02_learn.adaptor import Adaptor
-from h03_eval.eval_two_stage import evaluate_adaptor
-=======
 from h02_learn.model.adaptor import Adaptor
->>>>>>> Add rest of code review suggestions
 from util.argparser import get_argparser, parse_args
 from util import util
 

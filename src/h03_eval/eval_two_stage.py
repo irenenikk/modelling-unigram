@@ -5,7 +5,7 @@ sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.train_generator import load_generator
 from h02_learn.model.adaptor import Adaptor
-from h02_learn.model.adaptor import evaluate_adaptor
+from h02_learn.train_two_stage import evaluate_adaptor
 from util import util
 from util.argparser import get_argparser, parse_args
 
