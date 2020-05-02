@@ -21,7 +21,7 @@ class TypesFromTokensDataset(Dataset):
                 self.types[word] = True
                 # this is reconstructing the original word indices from the batch
                 # include the last character, which is usually the end of word marker
-                last_char = batch_y[i][np.argmax(x == 0) - 1]
+                last_char = batch_y[i][torch.nonzero(x == 0).flatten()[0] - 1]
                 self.type_indices.append(torch.cat((x[x > 0], torch.unsqueeze(last_char, 0))))
                 self.type_weights.append(torch.unsqueeze(weights[i], 0))
                 self.type_ids.append(ids[i])
