@@ -4,22 +4,21 @@ import os
 
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
-from h02_learn.model import LstmLM
 from h02_learn.train_generator import train, load_generator
+from h02_learn.train_generator import evaluate as evaluate_generator
 from h02_learn.dataset.table_label import TableLabelDataset
 from h02_learn.adaptor import Adaptor
-from h03_eval.eval_generator import evaluate_generator
 from h03_eval.eval_two_stage import evaluate_adaptor
 from util.argparser import get_argparser, parse_args
-from util import constants
 from util import util
+
 
 def get_args():
     argparser = get_argparser()
-    argparser.add_argument('--epochs', type=int, default=5)
     # Data
     argparser.add_argument('--max-train-tokens', type=int)
     # Optimization
+    argparser.add_argument('--epochs', type=int, default=5)
     argparser.add_argument('--eval-batches', type=int, default=200)
     argparser.add_argument('--wait-epochs', type=int, default=5)
     # Save
@@ -31,15 +30,18 @@ def get_args():
     argparser.add_argument('--adaptor-iterations', type=int, default=6)
     argparser.add_argument('--two-stage-state-folder', type=str, required=True)
     argparser.add_argument('--load-adaptor-init-state', default=False, action='store_true')
+
     args = parse_args(argparser)
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
 
-def get_model(alphabet, args):
-    return LstmLM(
-        len(alphabet), args.embedding_size, args.hidden_size,
-        nlayers=args.nlayers, dropout=args.dropout, ignore_index=alphabet.char2idx('PAD')) \
-        .to(device=constants.device)
+
+# def get_model(alphabet, args):
+#     return LstmLM(
+#         len(alphabet), args.embedding_size, args.hidden_size,
+#         nlayers=args.nlayers, dropout=args.dropout, ignore_index=alphabet.char2idx('PAD')) \
+#         .to(device=constants.device)
+
 
 def train_adaptor(adaptor, generator, trainloader, devloader, adaptor_iterations):
     """ Train and recover the state performing the best on development set """
@@ -58,15 +60,17 @@ def train_adaptor(adaptor, generator, trainloader, devloader, adaptor_iterations
     adaptor.set_state(best_state)
     return best_tables_with_word_labels, min_dev_loss
 
+
 def train_generator(generator, tables_with_word_labels, devloader, args, alphabet):
     generator.train()
     tables_with_word_labels_dataset = TableLabelDataset(tables_with_word_labels, alphabet)
-    table_label_dataloader = get_data_loader(tables_with_word_labels_dataset,\
-                                                args.batch_size)
-    _, generator_dev_loss = train(table_label_dataloader, devloader, generator, alphabet,\
-                                    args.eval_batches, args.wait_iterations)
+    table_label_dataloader = get_data_loader(tables_with_word_labels_dataset,
+                                             args.batch_size)
+    _, generator_dev_loss = train(table_label_dataloader, devloader, generator,\
+                                  args.eval_batches, args.wait_iterations)
     generator.save(args.two_stage_state_folder)
     print('Generator dev loss', generator_dev_loss)
+
 
 def train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, args):
     tables_with_word_labels = adaptor.state['tables_with_word_label']
@@ -75,13 +79,14 @@ def train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, 
         # train generator
         if len(tables_with_word_labels) > 0:
             print('Training the generator with table label data')
-            train_generator(generator, tables_with_word_labels,\
-                                            devloader, args, alphabet)
+            train_generator(generator, tables_with_word_labels,
+                            devloader, args, alphabet)
         # train adaptor
         print('Training the adaptor')
         tables_with_word_labels, two_stage_dev_loss = \
             train_adaptor(adaptor, generator, trainloader, devloader, args.adaptor_iterations)
     return two_stage_dev_loss
+
 
 def save_two_stage_training_results(model, args, train_loss, dev_loss, generator_dev_loss,\
                                         training_time, train_size, dev_size):
@@ -100,22 +105,23 @@ def save_two_stage_training_results(model, args, train_loss, dev_loss, generator
                 training_time, train_size, dev_size]]
     util.write_csv(results_fname, results)
 
+
 def main():
     args = get_args()
     folds = [list(range(8)), [8], [9]]
 
     trainloader, devloader, alphabet = \
         get_data_loaders_with_folds(args.dataset, args.data_file, folds,\
-                                        args.batch_size, max_train_tokens=args.max_train_tokens)
+                                    args.batch_size, max_train_tokens=args.max_train_tokens)
 
     print('Train size: %d Dev size: %d' %
           (len(trainloader.dataset), len(devloader.dataset)))
 
     start = time.time()
 
-    generator = load_generator(alphabet, args.generator_path)
-    initial_state = Adaptor.get_initial_state(args.alpha, args.beta, alphabet)
-    adaptor = Adaptor(initial_state, state_folder=args.two_stage_state_folder)
+    generator = load_generator(args.generator_path)
+    # initial_state = Adaptor.get_initial_state(args.alpha, args.beta, alphabet)
+    adaptor = Adaptor(args.alpha, args.beta, alphabet, state_folder=args.two_stage_state_folder)
     two_stage_dev_loss = \
         train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, args)
 
@@ -123,9 +129,9 @@ def main():
     training_time = end - start
 
     print('Getting generator training loss')
-    generator_train_loss = evaluate_generator(trainloader, generator, alphabet)
+    generator_train_loss = evaluate_generator(trainloader, generator)
     print('Getting generator dev loss')
-    generator_dev_loss = evaluate_generator(devloader, generator, alphabet)
+    generator_dev_loss = evaluate_generator(devloader, generator)
 
     print('Generator training loss: %.4f Dev loss: %.4f' %
           (generator_train_loss, generator_dev_loss))

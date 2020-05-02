@@ -44,13 +44,13 @@ def main():
     args = get_args()
     folds = [list(range(8)), [8], [9]]
 
-    trainloader, devloader, testloader, alphabet = \
+    trainloader, devloader, testloader, _ = \
         get_data_loaders_with_folds(args.dataset, args.data_file, folds,\
                                         args.batch_size, test=True)
     print('Train size: %d Dev size: %d Test size: %d' %
           (len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
-    generator = load_generator(alphabet, args.two_stage_state_folder)
+    generator = load_generator(args.two_stage_state_folder)
     generator.eval()
     adaptor = Adaptor.load(args.two_stage_state_folder)
 

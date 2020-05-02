@@ -42,7 +42,7 @@ TWO_STAGE_INIT_TOKEN_ON_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluat
 
 all: get_wiki train_generator train_two_stage eval_generator
 
-train_two_stage: run_two_stage_token_training run_two_stage_type_training
+train_two_stage: run_two_stage_type_training run_two_stage_token_training
 	echo "Finished training two-stage model" $(LANGUAGE)
 
 eval_generator: $(GENERATOR_RESULTS_FILE)
@@ -63,7 +63,7 @@ clean:
 
 # Eval two-stage model
 run_two_stage_type_evaluation: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
-	echo "Eval models on types" $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE) 
+	echo "Eval models on types" $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
 	echo "Evaluate two-stage model initialised with a type generator"
 	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --adaptor-results-file $(TWO_STAGE_INIT_TYPE_ON_TYPE_RESULTS_FILE) --batch-size 64 --dataset types

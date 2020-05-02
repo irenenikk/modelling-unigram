@@ -1,21 +1,25 @@
 import os
-
 from collections import defaultdict
 import torch
 import numpy as np
 from tqdm import tqdm
+
 from util.util import hacked_exp, write_data, read_data
+
 
 class Adaptor:
     # pylint: disable=too-many-locals
 
-    def __init__(self, state, state_folder, save_state=True):
-        self.state = state
+    def __init__(self, alpha, beta, alphabet, state_folder, save_state=True):
+        self.alpha = alpha
+        self.beta = beta
+        self.alphabet = alphabet
         self.saved_state_folder = state_folder
         self.save_state = save_state
 
-    @staticmethod
-    def get_initial_state(alpha, beta, alphabet):
+        self.state = self.get_initial_state()
+
+    def get_initial_state(self):
         state = {}
         # initialise mapping from table index to n.o. customers
         # int --> int
@@ -32,25 +36,10 @@ class Adaptor:
         state['max_table_index'] = -1
         # this is marked as the function K in the original paper
         state['total_tables'] = 0
-        state['alpha'] = torch.Tensor([alpha])
-        state['beta'] = torch.Tensor([beta])
-        state['alphabet'] = alphabet
+        state['alpha'] = torch.Tensor([self.alpha])
+        state['beta'] = torch.Tensor([self.beta])
+        state['alphabet'] = self.alphabet
         return state
-
-    @staticmethod
-    def get_state_file(saved_state_folder):
-        return os.path.join(saved_state_folder, 'adaptor_state')
-
-    @classmethod
-    def load(cls, state_folder):
-        state_file = cls.get_state_file(state_folder)
-        print('Loading fitted adaptor from', state_file)
-        state = read_data(state_file)
-        adaptor = cls(state, state_folder)
-        return adaptor
-
-    def set_state(self, state):
-        self.state = state
 
     def _sample_new_table_assignment(self, table_probs):
         probs, ids = zip(*table_probs)
@@ -105,15 +94,6 @@ class Adaptor:
                                         for table_id in self.state['tables_with_word_label'][word]])
         return c_in_tables_with_label
 
-    def save_fitted_state(self, dataloader, state_folder=None):
-        customers_in_tables_with_label = self.count_customers_in_tables_with_label(dataloader)
-        self.state['customers_in_tables_with_label'] = customers_in_tables_with_label
-        saved_state_folder = state_folder
-        if state_folder is None:
-            saved_state_folder = self.saved_state_folder
-        adaptor_state_file = self.get_state_file(saved_state_folder)
-        write_data(adaptor_state_file, self.state)
-
     @staticmethod
     def _normalise_table_probabilities(table_logprobs):
         exp_probs = hacked_exp([prob for prob, idd in table_logprobs])
@@ -137,6 +117,7 @@ class Adaptor:
 
     def fit(self, generator, dataloader):
         self.state['dataset_length'] = len(dataloader)
+
         for x, y, _, token_ids in tqdm(dataloader, total=len(dataloader), \
                                     desc='Fitting adaptor', mininterval=.2):
             tokens_logprobs = generator.get_word_log_probability(x, y)
@@ -161,8 +142,49 @@ class Adaptor:
                 # store info about amount of labels
                 self.state['tables_with_word_label'][token].add(assigned_table_id)
                 self.state['table_assignments'][token_id] = assigned_table_id
+
         if self.save_state:
             print('Saving adaptor state to', self.saved_state_folder)
             self.save_fitted_state(dataloader)
+
         print('Done fitting the adaptor')
         return self.state['tables_with_word_label']
+
+    def save_fitted_state(self, dataloader, state_folder=None):
+        customers_in_tables_with_label = self.count_customers_in_tables_with_label(dataloader)
+        self.state['customers_in_tables_with_label'] = customers_in_tables_with_label
+
+        if state_folder is None:
+            state_folder = self.saved_state_folder
+        adaptor_state_file = self.get_state_file(state_folder)
+        write_data(adaptor_state_file, self.get_checkpoint())
+
+    @classmethod
+    def load(cls, state_folder):
+        state_file = cls.get_state_file(state_folder)
+        print('Loading fitted adaptor from', state_file)
+        checkpoint = read_data(state_file)
+        adaptor = cls(**checkpoint['kwargs'])
+        adaptor.set_state(checkpoint['state'])
+        return adaptor
+
+    def set_state(self, state):
+        self.state = state
+
+    def get_checkpoint(self):
+        return {
+            'kwargs': self.get_args(),
+            'state': self.state
+        }
+
+    def get_args(self):
+        return {
+            'alpha': self.alpha,
+            'beta': self.beta,
+            'alphabet': self.alphabet,
+            'save_state': self.save_state,
+        }
+
+    @staticmethod
+    def get_state_file(saved_state_folder):
+        return os.path.join(saved_state_folder, 'adaptor_state')
