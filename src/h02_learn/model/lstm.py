@@ -46,8 +46,6 @@ class LstmLM(BaseLM):
             .reshape_as(y)
 
     def get_word_log_probability(self, x, y):
-        # criterion = nn.CrossEntropyLoss(ignore_index=self.ignore_index,\
-        #                                 reduction='none').to(device=constants.device)
         logits = self(x)
         logprobs = self.get_loss(logits, y).sum(-1)
         return -logprobs

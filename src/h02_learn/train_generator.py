@@ -7,7 +7,6 @@ sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.model import LstmLM
 from h02_learn.train_info import TrainInfo
-# from h03_eval.eval_generator import evaluate_generator
 from util.argparser import get_argparser, parse_args
 from util import util
 from util import constants

@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
-import torch
 import numpy as np
+import torch
 from tqdm import tqdm
 
 from util.util import hacked_exp, write_data, read_data
@@ -82,8 +82,7 @@ class Adaptor:
         generator_prob = torch.exp(generator_logprob)
         state1 = customers_in_tables_with_label - len(tables_with_word_label)*self.state['alpha']
         state2 = self.state['total_tables']*self.state['alpha'] + self.state['beta']
-        res = torch.log(state1 + state2*generator_prob)-torch.log(i+self.state['beta'])
-        return res
+        return torch.log(state1 + state2*generator_prob)-torch.log(i+self.state['beta'])
 
     def count_customers_in_tables_with_label(self, dataloader):
         c_in_tables_with_label = defaultdict(int)

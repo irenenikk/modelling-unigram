@@ -1,11 +1,11 @@
 import os
 import sys
-import torch
 
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.train_generator import load_generator
-from h02_learn.adaptor import Adaptor
+from h02_learn.model.adaptor import Adaptor
+from h02_learn.model.adaptor import evaluate_adaptor
 from util import util
 from util.argparser import get_argparser, parse_args
 
@@ -17,16 +17,6 @@ def get_args():
     argparser.add_argument('--two-stage-state-folder', type=str, required=True)
     args = parse_args(argparser)
     return args
-
-def evaluate_adaptor(dataloader, generator, adaptor):
-    print('Evaluating adaptor with a dataset of size', len(dataloader.dataset))
-    generator.eval()
-    dataloader.dataset.eval()
-    with torch.no_grad():
-        cross_entropy = adaptor.calculate_cross_entropy(dataloader, generator)
-    generator.train()
-    dataloader.dataset.train()
-    return cross_entropy
 
 def save_pitman_yor_results(model, alpha, beta, train_loss,\
                             dev_loss, test_loss, test_size, results_fname):
