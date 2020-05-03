@@ -1,7 +1,6 @@
 import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
-import numpy as np
 
 class TypesFromTokensDataset(Dataset):
 
