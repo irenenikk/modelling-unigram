@@ -12,7 +12,6 @@ from h02_learn.train_generator import evaluate as evaluate_generator
 from h02_learn.dataset.table_label import TableLabelDataset
 from h02_learn.model.adaptor import Adaptor
 from h02_learn.dataset.types_from_tokens import TypesFromTokensDataset
-from h02_learn.adaptor import Adaptor
 from util.argparser import get_argparser, parse_args
 from util import util
 
@@ -72,7 +71,7 @@ def train_generator(generator, tables_with_word_labels, token_devloader, args, a
     tables_with_word_labels_dataset = TableLabelDataset(tables_with_word_labels, alphabet)
     table_label_dataloader = get_data_loader(tables_with_word_labels_dataset,\
                                                 args.batch_size)
-    _, generator_dev_loss = train(table_label_dataloader, token_devloader, generator, alphabet,\
+    _, generator_dev_loss = train(table_label_dataloader, token_devloader, generator,
                                     args.eval_batches, args.wait_iterations)
     generator.save(args.two_stage_state_folder)
     print('Generator dev loss', generator_dev_loss)
@@ -130,7 +129,7 @@ def initiate_two_stage_training(token_trainloader, token_devloader, token_alphab
     start = time.time()
 
     generator = load_generator(args.generator_path)
-    adaptor = Adaptor(args.alpha, args.beta, alphabet, state_folder=args.two_stage_state_folder)
+    adaptor = Adaptor(args.alpha, args.beta, token_alphabet, state_folder=args.two_stage_state_folder)
     two_stage_dev_loss = \
         train_two_stage_model(generator, adaptor, token_trainloader, token_devloader,\
                                 token_alphabet, type_trainloader, args)

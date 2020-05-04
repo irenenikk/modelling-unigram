@@ -59,7 +59,7 @@ class Adaptor:
             for i, log_prob in enumerate(generator_logprobs):
                 # do not use the start of word index
                 token = tokens[i]
-                word_logprob = self.get_token_probability(log_prob, token)
+                word_logprob = self.get_token_logprobability(log_prob, token)
                 entropy += -word_logprob * weights[i]
                 total_tokens += weights[i]
         return (entropy / total_tokens).item()
@@ -76,7 +76,7 @@ class Adaptor:
             # their probabilities are too small to take away from log space
             return torch.log(adaptor_state) + generator_logprob - torch.log(i+self.state['beta'])
         generator_prob = torch.exp(generator_logprob)
-        state1 = customers_in_tables_with_label - len(tables_with_word_label)*self.state['alpha']
+        state1 = customers_in_tables_with_label - tables_with_word_label*self.state['alpha']
         return torch.log(state1 + adaptor_state*generator_prob)-torch.log(i+self.state['beta'])
 
     def save_fitted_state(self, state_folder=None):
@@ -147,15 +147,6 @@ class Adaptor:
             self.save_fitted_state()
         print('Done fitting the adaptor')
         return self.state['tables_with_word_label']
-
-    def save_fitted_state(self, dataloader, state_folder=None):
-        customers_in_tables_with_label = self.count_customers_in_tables_with_label(dataloader)
-        self.state['customers_in_tables_with_label'] = customers_in_tables_with_label
-
-        if state_folder is None:
-            state_folder = self.saved_state_folder
-        adaptor_state_file = self.get_state_file(state_folder)
-        write_data(adaptor_state_file, self.get_checkpoint())
 
     @classmethod
     def load(cls, state_folder):
