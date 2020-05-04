@@ -1,8 +1,8 @@
 import time
 import sys
 import os
-import torch
 import copy
+import torch
 from tqdm import tqdm
 
 sys.path.append('./src/')
@@ -72,12 +72,12 @@ def train_generator(generator, tables_with_word_labels, token_devloader, args, a
     table_label_dataloader = get_data_loader(tables_with_word_labels_dataset,\
                                                 args.batch_size)
     _, generator_dev_loss = train(table_label_dataloader, token_devloader, generator,
-                                    args.eval_batches, args.wait_iterations)
+                                  args.eval_batches, args.wait_iterations)
     generator.save(args.two_stage_state_folder)
     print('Generator dev loss', generator_dev_loss)
 
 def train_two_stage_model(generator, adaptor, token_trainloader, token_devloader, token_alphabet,
-                            type_trainloader, args):
+                          type_trainloader, args):
     tables_with_word_labels = adaptor.state['tables_with_word_label']
     for i in range(args.epochs):
         print('Iteration', i)
@@ -86,7 +86,8 @@ def train_two_stage_model(generator, adaptor, token_trainloader, token_devloader
         # train adaptor
         print('Training the adaptor')
         tables_with_word_labels, two_stage_dev_loss = \
-            train_adaptor(adaptor, generator, types_logprobs, token_trainloader, token_devloader, args.adaptor_iterations)
+            train_adaptor(adaptor, generator, types_logprobs,
+                          token_trainloader, token_devloader, args.adaptor_iterations)
         # train generator
         print('Training the generator with table label data')
         train_generator(generator, tables_with_word_labels,\
@@ -129,7 +130,7 @@ def initiate_two_stage_training(token_trainloader, token_devloader, token_alphab
     start = time.time()
 
     generator = load_generator(args.generator_path)
-    adaptor = Adaptor(args.alpha, args.beta, token_alphabet, state_folder=args.two_stage_state_folder)
+    adaptor = Adaptor(args.alpha, args.beta, token_alphabet, args.two_stage_state_folder)
     two_stage_dev_loss = \
         train_two_stage_model(generator, adaptor, token_trainloader, token_devloader,\
                                 token_alphabet, type_trainloader, args)
@@ -153,9 +154,9 @@ def main():
         initiate_two_stage_training(token_trainloader, token_devloader, token_alphabet, args)
 
     print('Getting generator training loss')
-    generator_train_loss = evaluate_generator(trainloader, generator)
+    generator_train_loss = evaluate_generator(token_trainloader, generator)
     print('Getting generator dev loss')
-    generator_dev_loss = evaluate_generator(devloader, generator)
+    generator_dev_loss = evaluate_generator(token_devloader, generator)
 
     print('Generator training loss: %.4f Dev loss: %.4f' %
           (generator_train_loss, generator_dev_loss))

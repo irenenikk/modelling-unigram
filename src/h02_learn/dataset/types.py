@@ -7,12 +7,6 @@ class TypeDataset(BaseDataset):
 
     def process_train(self, data):
         word_freqs = self.get_folds_data(data)
-
-        word_freqs = [(word, info['count'])
-                      for fold in self.folds
-                      for word, info in folds_data[fold].items()]
-        if self.max_tokens is not None:
-            word_freqs = self.subsample(word_freqs, self.max_tokens)
         self.token_train = [word for word, _ in word_freqs]
         self.word_train = [torch.LongTensor(self.get_word_idx(word)) for word in self.token_train]
         self.train_instances = len(self.word_train)

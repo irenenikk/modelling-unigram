@@ -34,20 +34,35 @@ class Adaptor:
         state['alphabet'] = self.alphabet
         return state
 
-    @staticmethod
-    def get_state_file(saved_state_folder):
-        return os.path.join(saved_state_folder, 'adaptor_state')
-
     @classmethod
     def load(cls, state_folder):
         state_file = cls.get_state_file(state_folder)
         print('Loading fitted adaptor from', state_file)
-        state = read_data(state_file)
-        adaptor = cls(state, state_folder)
+        checkpoint = read_data(state_file)
+        adaptor = cls(**checkpoint['kwargs'])
+        adaptor.set_state(checkpoint['state'])
         return adaptor
 
     def set_state(self, state):
         self.state = state
+
+    def get_checkpoint(self):
+        return {
+            'kwargs': self.get_args(),
+            'state': self.state
+        }
+
+    def get_args(self):
+        return {
+            'alpha': self.alpha,
+            'beta': self.beta,
+            'alphabet': self.alphabet,
+            'save_state': self.save_state,
+        }
+
+    @staticmethod
+    def get_state_file(saved_state_folder):
+        return os.path.join(saved_state_folder, 'adaptor_state')
 
     def calculate_cross_entropy(self, dataloader, generator):
         entropy = 0
@@ -147,33 +162,3 @@ class Adaptor:
             self.save_fitted_state()
         print('Done fitting the adaptor')
         return self.state['tables_with_word_label']
-
-    @classmethod
-    def load(cls, state_folder):
-        state_file = cls.get_state_file(state_folder)
-        print('Loading fitted adaptor from', state_file)
-        checkpoint = read_data(state_file)
-        adaptor = cls(**checkpoint['kwargs'])
-        adaptor.set_state(checkpoint['state'])
-        return adaptor
-
-    def set_state(self, state):
-        self.state = state
-
-    def get_checkpoint(self):
-        return {
-            'kwargs': self.get_args(),
-            'state': self.state
-        }
-
-    def get_args(self):
-        return {
-            'alpha': self.alpha,
-            'beta': self.beta,
-            'alphabet': self.alphabet,
-            'save_state': self.save_state,
-        }
-
-    @staticmethod
-    def get_state_file(saved_state_folder):
-        return os.path.join(saved_state_folder, 'adaptor_state')
