@@ -63,26 +63,25 @@ class Adaptor:
                 # do not use the start of word index
                 token_indices = x[i][1:]
                 token = ''.join(self.state['alphabet'].idx2word(token_indices))
-                word_logprob = self.get_token_probability(log_prob, token)
+                word_logprob = self.get_token_logprobability(log_prob, token)
                 entropy += -word_logprob * weights[i]
                 total_tokens += weights[i]
         return (entropy / total_tokens).item()
 
-    def get_token_probability(self, generator_logprob, token):
+    def get_token_logprobability(self, generator_logprob, token):
         """ The marginal probability of a token defined by marginalising over
             table assignments as defined by Goldwater et al. """
         i = self.state['dataset_length']
         tables_with_word_label = self.state['tables_with_word_label'][token]
         customers_in_tables_with_label = self.state['customers_in_tables_with_label'][token]
+        adaptor_state = self.state['total_tables']*self.state['alpha'] + self.state['beta']
         if len(tables_with_word_label) == 0 and customers_in_tables_with_label == 0:
             # this takes care of rare words not encountered in training
             # their probabilities are too small to take away from log space
-            adaptor_state = self.state['total_tables']*self.state['alpha'] + self.state['beta']
             return torch.log(adaptor_state) + generator_logprob - torch.log(i+self.state['beta'])
         generator_prob = torch.exp(generator_logprob)
         state1 = customers_in_tables_with_label - len(tables_with_word_label)*self.state['alpha']
-        state2 = self.state['total_tables']*self.state['alpha'] + self.state['beta']
-        return torch.log(state1 + state2*generator_prob)-torch.log(i+self.state['beta'])
+        return torch.log(state1 + adaptor_state*generator_prob)-torch.log(i+self.state['beta'])
 
     def count_customers_in_tables_with_label(self, dataloader):
         c_in_tables_with_label = defaultdict(int)
@@ -115,7 +114,7 @@ class Adaptor:
         return table_logprobs
 
     def fit(self, generator, dataloader):
-        self.state['dataset_length'] = len(dataloader)
+        self.state['dataset_length'] = len(dataloader.dataset)
 
         for x, y, _, token_ids in tqdm(dataloader, total=len(dataloader), \
                                     desc='Fitting adaptor', mininterval=.2):

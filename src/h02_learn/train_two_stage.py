@@ -2,6 +2,7 @@ import time
 import sys
 import os
 import torch
+import copy
 
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
@@ -47,8 +48,8 @@ def evaluate_adaptor(dataloader, generator, adaptor):
 
 def train_adaptor(adaptor, generator, trainloader, devloader, adaptor_iterations):
     """ Train and recover the state performing the best on development set """
-    min_dev_loss = 1e5
-    best_state = adaptor.state
+    min_dev_loss = float('inf')
+    best_state = copy.deepcopy(adaptor.state)
     best_tables_with_word_labels = None
     for adaptor_iter in range(adaptor_iterations):
         print('Adaptor iteration', adaptor_iter + 1, '/', adaptor_iterations)
@@ -57,8 +58,8 @@ def train_adaptor(adaptor, generator, trainloader, devloader, adaptor_iterations
         print('Adaptor dev loss', two_stage_dev_loss)
         if two_stage_dev_loss < min_dev_loss:
             min_dev_loss = two_stage_dev_loss
-            best_state = adaptor.state
-            best_tables_with_word_labels = tables_with_word_labels
+            best_state = copy.deepcopy(adaptor.state)
+            best_tables_with_word_labels = copy.deepcopy(tables_with_word_labels)
     adaptor.set_state(best_state)
     return best_tables_with_word_labels, min_dev_loss
 
@@ -78,6 +79,7 @@ def train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, 
     tables_with_word_labels = adaptor.state['tables_with_word_label']
     for i in range(args.epochs):
         print('Iteration', i)
+<<<<<<< Updated upstream
         # train adaptor
         print('Training the adaptor')
         tables_with_word_labels, two_stage_dev_loss = \
@@ -85,6 +87,19 @@ def train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, 
         print('Training the generator with table label data')
         train_generator(generator, tables_with_word_labels,
                         devloader, args, alphabet)
+=======
+        # precalculate the type logprobs
+        types_logprobs = precalculate_types_logprobs(generator, type_trainloader)
+        # train adaptor
+        print('Training the adaptor')
+        tables_with_word_labels, two_stage_dev_loss = \
+            train_adaptor(adaptor, generator, types_logprobs, \
+                            token_trainloader, token_devloader, args.adaptor_iterations)
+        # train generator
+        print('Training the generator with table label data')
+        train_generator(generator, tables_with_word_labels,\
+                                        token_devloader, args, token_alphabet)
+>>>>>>> Stashed changes
     return two_stage_dev_loss
 
 

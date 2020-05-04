@@ -39,8 +39,9 @@ def construct_pitman_yor_tuning_results(model, alpha, beta, train_loss, dev_loss
 
 def tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas):
     # pylint: disable=too-many-locals
-    best_loss = 1e5
+    best_loss = float('inf')
     best_params = None
+    tuning_results = construct_pitman_yor_tuning_result_headers()
     for alpha in alphas:
         for beta in betas:
             generator = load_generator(args.generator_path)
