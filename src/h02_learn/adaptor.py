@@ -105,6 +105,8 @@ class Adaptor:
                 if random_draw <= 0:
                     self.state['seating_histogram_per_word'][word][customer_amount+1] += 1
                     self.state['seating_histogram_per_word'][word][customer_amount] -= 1
+                    if self.state['seating_histogram_per_word'][word][customer_amount] == 0:
+                        del self.state['seating_histogram_per_word'][word][customer_amount]
                     break
         self.state['customers_in_tables_with_label'][word] += 1
 
@@ -123,6 +125,8 @@ class Adaptor:
                     self.state['seating_histogram_per_word'][word][customer_amount-1] += 1
                     self.state['total_tables'] += 1
                     self.state['tables_with_word_label'][word] += 1
+                if self.state['seating_histogram_per_word'][word][customer_amount] == 0:
+                    del self.state['seating_histogram_per_word'][word][customer_amount]
                 break
         self.state['customers_in_tables_with_label'][word] -= 1
 
