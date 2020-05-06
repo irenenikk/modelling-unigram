@@ -65,7 +65,6 @@ def train_adaptor(adaptor, generator, types_logprobs, trainloader, devloader, ad
     adaptor.set_state(best_state)
     return best_tables_with_word_labels, min_dev_loss
 
-
 def train_generator(generator, tables_with_word_labels, token_devloader, args, alphabet):
     generator.train()
     tables_with_word_labels_dataset = TableLabelDataset(tables_with_word_labels, alphabet)

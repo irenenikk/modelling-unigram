@@ -34,7 +34,7 @@ def generate_batch(batch):
 
     x, y = x.to(device=constants.device), y.to(device=constants.device)
     weights = torch.cat([b[1] for b in batch]).to(device=constants.device)
-    indices = torch.Tensor([b[2] for b in batch]).to(device=constants.device)
+    indices = torch.LongTensor([b[2] for b in batch]).to(device=constants.device)
     tokens = [b[3] for b in batch]
     return x, y, weights, indices, tokens
 
