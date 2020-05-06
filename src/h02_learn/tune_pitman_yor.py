@@ -17,7 +17,7 @@ def get_args():
     argparser.add_argument('--no-alphas', type=float, required=True)
     argparser.add_argument('--no-betas', type=int, required=True)
     argparser.add_argument('--beta-end', type=int)
-    argparser.add_argument('--adaptor-iterations', type=int, default=10)
+    argparser.add_argument('--adaptor-iterations', type=int, default=6)
     argparser.add_argument('--two-stage-state-folder', type=str, required=True)
     add_all_defaults(argparser)
     args = parse_args(argparser)
