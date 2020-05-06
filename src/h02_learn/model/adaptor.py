@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from util.util import hacked_exp, write_data, read_data
+from util.util import hacked_exp, write_torch_data, read_torch_data
 
 
 class Adaptor:
@@ -155,13 +155,13 @@ class Adaptor:
         if state_folder is None:
             state_folder = self.saved_state_folder
         adaptor_state_file = self.get_state_file(state_folder)
-        write_data(adaptor_state_file, self.get_checkpoint())
+        write_torch_data(adaptor_state_file, self.get_checkpoint())
 
     @classmethod
     def load(cls, state_folder):
         state_file = cls.get_state_file(state_folder)
         print('Loading fitted adaptor from', state_file)
-        checkpoint = read_data(state_file)
+        checkpoint = read_torch_data(state_file)
         adaptor = cls(**checkpoint['kwargs'])
         adaptor.set_state(checkpoint['state'])
         return adaptor
