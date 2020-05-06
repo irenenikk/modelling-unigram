@@ -65,6 +65,7 @@ def tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas):
     return tuning_results
 
 def main():
+    # pylint: disable=all
     args = get_args()
     folds = [list(range(8)), [8], [9]]
 

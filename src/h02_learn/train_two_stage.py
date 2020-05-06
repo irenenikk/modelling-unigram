@@ -108,6 +108,7 @@ def save_two_stage_training_results(model, args, train_loss, dev_loss, generator
 
 
 def main():
+    # pylint: disable=all
     args = get_args()
     folds = [list(range(8)), [8], [9]]
 

@@ -31,6 +31,7 @@ def save_pitman_yor_results(model, alpha, beta, train_loss,\
     util.write_csv(results_fname, results)
 
 def main():
+    # pylint: disable=all
     args = get_args()
     folds = [list(range(8)), [8], [9]]
 
