@@ -24,7 +24,7 @@ class Adaptor:
         # initialise mapping from table indices to labels
         # { word : table amount }
         state['tables_with_word_label'] = defaultdict(int)
-        state['assigned_to_table'] = defaultdict(bool)
+        state['assigned_to_table'] = None
         state['total_tables'] = 0
         state['alpha'] = torch.Tensor([alpha])
         state['beta'] = torch.Tensor([beta])
@@ -105,6 +105,8 @@ class Adaptor:
                 if random_draw <= 0:
                     self.state['seating_histogram_per_word'][word][customer_amount+1] += 1
                     self.state['seating_histogram_per_word'][word][customer_amount] -= 1
+                    if self.state['seating_histogram_per_word'][word][customer_amount] == 0:
+                        del self.state['seating_histogram_per_word'][word][customer_amount]
                     break
         self.state['customers_in_tables_with_label'][word] += 1
 
@@ -123,6 +125,8 @@ class Adaptor:
                     self.state['seating_histogram_per_word'][word][customer_amount-1] += 1
                     self.state['total_tables'] += 1
                     self.state['tables_with_word_label'][word] += 1
+                if self.state['seating_histogram_per_word'][word][customer_amount] == 0:
+                    del self.state['seating_histogram_per_word'][word][customer_amount]
                 break
         self.state['customers_in_tables_with_label'][word] -= 1
 
@@ -131,10 +135,13 @@ class Adaptor:
         """
         The dictionary token_logprobs has the precalculated generator probability for each token.
         """
-        self.state['dataset_length'] = len(dataloader)
+        self.state['dataset_length'] = len(dataloader.dataset)
+        if self.state['assigned_to_table'] is None:
+            self.state['assigned_to_table'] = [False] * self.state['dataset_length']
+
         for _, _, _, token_ids, tokens in tqdm(dataloader, total=len(dataloader), \
                                     desc='Fitting adaptor', mininterval=.2):
-            for token, token_id in zip(tokens, token_ids):
+            for token, token_id in zip(tokens, token_ids.tolist()):
                 if self.state['assigned_to_table'][token_id]:
                     self.customer_leaves(token)
                 token_logprob = types_logprobs[token]
