@@ -61,6 +61,7 @@ def tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas):
     return tuning_results
 
 def main():
+    # pylint: disable=all
     args = get_args()
     folds = [list(range(8)), [8], [9]]
 
@@ -80,8 +81,8 @@ def main():
     print('alphas:', alphas)
     print('betas:', betas)
     tuning_results = tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas)
-    print('Writing tuning results to', args.adaptor_results_file)
-    util.write_csv(args.adaptor_results_file, tuning_results)
+    print('Writing tuning results to', args.results_file)
+    util.write_csv(args.results_file, tuning_results)
 
 if __name__ == '__main__':
     main()
