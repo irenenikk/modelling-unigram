@@ -10,13 +10,14 @@ class BaseLM(nn.Module):
     name = 'base'
 
     def __init__(self, alphabet_size, embedding_size, hidden_size,
-                 nlayers, dropout):
+                 nlayers, dropout, ignore_index):
         super().__init__()
         self.nlayers = nlayers
         self.hidden_size = hidden_size
         self.embedding_size = embedding_size
         self.dropout_p = dropout
         self.alphabet_size = alphabet_size
+        self.ignore_index = ignore_index
 
         self.best_state_dict = None
 
@@ -40,6 +41,7 @@ class BaseLM(nn.Module):
             'embedding_size': self.embedding_size,
             'dropout': self.dropout_p,
             'alphabet_size': self.alphabet_size,
+            'ignore_index': self.ignore_index,
         }
 
     @classmethod
@@ -47,7 +49,7 @@ class BaseLM(nn.Module):
         checkpoints = cls.load_checkpoint(path)
         model = cls(**checkpoints['kwargs'])
         model.load_state_dict(checkpoints['model_state_dict'])
-        return model
+        return model.to(device=constants.device)
 
     @classmethod
     def load_checkpoint(cls, path):

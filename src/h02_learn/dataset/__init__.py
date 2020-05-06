@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 
+from util import constants
 from util import util
 from .types import TypeDataset
 from .tokens import TokenDataset
@@ -13,12 +14,11 @@ def generate_batch(batch):
     which are compatible with EmbeddingBag. The function is passed
     to 'collate_fn' in torch.utils.data.DataLoader. The input to
     'collate_fn' is a list of tensors with the size of batch_size,
-    and the 'collate_fn' function packs them into a mini-batch.[len(entry[0][0]) for entry in batch]
+    and the 'collate_fn' function packs them into a mini-batch.
     Pay attention here and make sure that 'collate_fn' is declared
     as a top level def. This ensures that the function is available
     in each worker.
     """
-
     tensor = batch[0][0]
     batch_size = len(batch)
     max_length = max([len(entry[0]) for entry in batch]) - 1  # Does not need to predict SOS
@@ -27,17 +27,15 @@ def generate_batch(batch):
     y = tensor.new_zeros(batch_size, max_length)
 
     for i, item in enumerate(batch):
-        sentence = item[0]
-        sent_len = len(sentence) - 1  # Does not need to predict SOS
-        x[i, :sent_len] = sentence[:-1]
-        y[i, :sent_len] = sentence[1:]
+        word = item[0]
+        word_len = len(word) - 1  # Does not need to predict SOS
+        x[i, :word_len] = word[:-1]
+        y[i, :word_len] = word[1:]
 
-    if len(batch[0]) == 1:
-        return x, y
-
-    weights = torch.cat([entry[1] for entry in batch])
-    return x, y, weights
-
+    x, y = x.to(device=constants.device), y.to(device=constants.device)
+    indices = torch.Tensor([b[2] for b in batch]).to(device=constants.device)
+    weights = torch.cat([b[1] for b in batch]).to(device=constants.device)
+    return x, y, weights, indices
 
 
 def get_data_cls(data_type):
@@ -57,18 +55,29 @@ def get_alphabet(data):
     return alphabet
 
 
-def get_data_loader(dataset_cls, fname, folds, batch_size, shuffle):
-    trainset = dataset_cls(fname, folds)
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=shuffle,
-                             collate_fn=generate_batch)
-    return trainloader
+def get_data_loader(dataset, batch_size, shuffle=True):
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
+                            collate_fn=generate_batch)
+    return dataloader
 
 
-def get_data_loaders(data_type, fname, folds, batch_size):
+def get_data_loader_with_folds(dataset_cls, data, folds, batch_size, shuffle, max_tokens=None):
+    trainset = dataset_cls(data, folds, max_tokens)
+    return DataLoader(trainset, batch_size=batch_size, shuffle=shuffle, collate_fn=generate_batch)
+
+
+def get_data_loaders_with_folds(data_type, fname, folds, batch_size,
+                                test=False, max_train_tokens=None):
     dataset_cls = get_data_cls(data_type)
     data = load_data(fname)
     alphabet = get_alphabet(data)
-    trainloader = get_data_loader(dataset_cls, data, folds[0], batch_size=batch_size, shuffle=True)
-    devloader = get_data_loader(dataset_cls, data, folds[1], batch_size=batch_size, shuffle=False)
-    testloader = get_data_loader(dataset_cls, data, folds[2], batch_size=batch_size, shuffle=False)
-    return trainloader, devloader, testloader, alphabet
+    trainloader = get_data_loader_with_folds(dataset_cls, data, folds[0],
+                                             batch_size=batch_size, shuffle=True,
+                                             max_tokens=max_train_tokens)
+    devloader = get_data_loader_with_folds(dataset_cls, data, folds[1],
+                                           batch_size=batch_size, shuffle=False)
+    if test:
+        testloader = get_data_loader_with_folds(dataset_cls, data, folds[2],
+                                                batch_size=batch_size, shuffle=False)
+        return trainloader, devloader, testloader, alphabet
+    return trainloader, devloader, alphabet

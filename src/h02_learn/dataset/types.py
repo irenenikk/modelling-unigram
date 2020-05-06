@@ -6,10 +6,9 @@ from .base import BaseDataset
 class TypeDataset(BaseDataset):
 
     def process_train(self, data):
-        folds_data, alphabet, _ = data
-        self.alphabet = alphabet
+        word_freqs = self.get_folds_data(data)
 
-        self.words = [word for fold in self.folds for word in folds_data[fold].keys()]
+        self.words = [word for word, _ in word_freqs]
         self.word_train = [torch.LongTensor(self.get_word_idx(word)) for word in self.words]
         self.train_instances = len(self.word_train)
 

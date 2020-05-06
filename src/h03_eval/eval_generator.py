@@ -1,25 +1,23 @@
 import sys
+import os
 
 sys.path.append('./src/')
-from h02_learn.dataset import get_data_loaders
+from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.model import LstmLM
-from h02_learn.train import evaluate
-from util import argparser
+from h02_learn.train_generator import evaluate
+from util.argparser import get_argparser, parse_args
 from util import util
 from util import constants
 
 
 def get_args():
-    # Data
-    argparser.add_argument('--dataset', type=str)
-    argparser.add_argument('--data-file', type=str)
-    argparser.add_argument('--batch-size', type=int, default=512)
+    argparser = get_argparser()
     # Models
     argparser.add_argument('--eval-path', type=str, required=True)
     # Save
     argparser.add_argument('--results-file', type=str, required=True)
 
-    return argparser.parse_args()
+    return parse_args(argparser)
 
 
 def load_model(fpath):
@@ -29,17 +27,19 @@ def load_model(fpath):
 def eval_all(model_paths, dataloaders):
     results = [['model', 'dataset', 'train_loss', 'dev_loss', 'test_loss']]
     for model_path in model_paths:
+        if not os.path.exists(LstmLM.get_name(model_path)):
+            continue
         model = load_model(model_path)
         model_name = model_path.split('/')[-1]
 
         for dataset, dataloader in dataloaders.items():
-            trainloader, devloader, testloader, alphabet = dataloader
+            trainloader, devloader, testloader, _ = dataloader
             print('Evaluating model: %s on dataset: %s' %
                   (model_name, dataset))
 
-            train_loss = evaluate(trainloader, model, alphabet)
-            dev_loss = evaluate(devloader, model, alphabet)
-            test_loss = evaluate(testloader, model, alphabet)
+            train_loss = evaluate(trainloader, model)
+            dev_loss = evaluate(devloader, model)
+            test_loss = evaluate(testloader, model)
 
             print('Final %s Training loss: %.4f Dev loss: %.4f Test loss: %.4f' %
                   (dataset, train_loss, dev_loss, test_loss))
@@ -57,7 +57,8 @@ def main():
     model_paths = util.get_dirs(args.eval_path)
 
     dataloaders = {
-        dataset: get_data_loaders(dataset, args.data_file, folds, args.batch_size)
+        dataset: get_data_loaders_with_folds(dataset, args.data_file, folds,\
+                                                args.batch_size, test=True)
         for dataset in datasets
     }
     for dataset, dataloader in dataloaders.items():

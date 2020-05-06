@@ -1,47 +1,29 @@
 import argparse
 from . import util
 
-parser = argparse.ArgumentParser(description='LanguageModel')
-# # Data
-# parser.add_argument('--data', type=str, default='celex',
-#                     help='Dataset used. (default: celex)')
-# parser.add_argument('--data-path', type=str, default='datasets',
-#                     help='Path where data is stored.')
+def add_data_args(parser):
+    # Data defaults
+    parser.add_argument('--dataset', type=str)
+    parser.add_argument('--data-file', type=str)
+    parser.add_argument('--batch-size', type=int, default=32)
 
-# Model
-parser.add_argument('--model', default='lstm', choices=['lstm'],
-                    help='Model used. (default: lstm)')
-# parser.add_argument('--opt', action='store_true', default=False,
-#                     help='Should use optimum parameters in training.')
-# parser.add_argument('--train-mode', type=str, default='type',
-#                     help='Training mode used. (default: type)')
+def add_generator_args(parser):
+    # Model defaults
+    parser.add_argument('--nlayers', type=int, default=3)
+    parser.add_argument('--embedding-size', type=int, default=128)
+    parser.add_argument('--hidden-size', type=int, default=512)
+    parser.add_argument('--dropout', type=float, default=.33)
 
-# Others
-# parser.add_argument('--results-path', type=str, default='results',
-#                     help='Path where results should be stored.')
-# parser.add_argument('--checkpoint-path', type=str, default='checkpoints',
-#                     help='Path where checkpoints should be stored.')
-# parser.add_argument('--csv-folder', type=str, default=None,
-#                     help='Specific path where to save results.')
-parser.add_argument('--seed', type=int, default=7,
-                    help='Seed for random algorithms repeatability (default: 7)')
+def get_argparser():
+    parser = argparse.ArgumentParser(description='LanguageModel')
+    parser.add_argument('--seed', type=int, default=7,
+                        help='Seed for random algorithms repeatability (default: 7)')
+    add_data_args(parser)
+    add_generator_args(parser)
+    return parser
 
-
-def add_argument(*args, **kwargs):
-    return parser.add_argument(*args, **kwargs)
-
-
-def set_defaults(*args, **kwargs):
-    return parser.set_defaults(*args, **kwargs)
-
-
-def get_default(*args, **kwargs):
-    return parser.get_default(*args, **kwargs)
-
-
-def parse_args(*args, **kwargs):
-    args = parser.parse_args(*args, **kwargs)
-
+def parse_args(parser):
+    args = parser.parse_args()
     # util.mkdir(args.rfolder)
     # util.mkdir(args.cfolder)
     util.config(args.seed)

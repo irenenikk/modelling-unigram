@@ -13,7 +13,7 @@ def config(seed):
 
 
 def write_csv(filename, results):
-    with io.open(filename, 'w', encoding='utf8') as f:
+    with io.open(filename, 'a', encoding='utf8') as f:
         writer = csv.writer(f, delimiter=',')
         writer.writerows(results)
 
@@ -23,9 +23,20 @@ def write_data(filename, embeddings):
         pickle.dump(embeddings, f)
 
 
+def write_torch_data(filename, embeddings):
+    with open(filename, "wb") as f:
+        torch.save(embeddings, f)
+
+
 def read_data(filename):
     with open(filename, "rb") as f:
         embeddings = pickle.load(f)
+    return embeddings
+
+
+def read_torch_data(filename):
+    with open(filename, "rb") as f:
+        embeddings = torch.load(f)
     return embeddings
 
 
@@ -59,3 +70,11 @@ def get_dirs(filepath):
 
 def mkdir(folder):
     pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
+
+def hacked_exp(x):
+    # the exp normalise trick to avoid over/underflowing:
+    # https://timvieira.github.io/blog/post/2014/02/11/exp-normalize-trick/
+    x = np.asarray(x)
+    maxim = x.max()
+    y = np.exp(x - maxim)
+    return y / y.sum()

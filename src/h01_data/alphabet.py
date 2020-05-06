@@ -1,5 +1,7 @@
 
 class Alphabet:
+    PAD_IDX = 0
+
     def __init__(self):
         self._chars2idx = {
             'PAD': 0,
@@ -25,7 +27,7 @@ class Alphabet:
         if not self._updated:
             self._idx2chars = {idx: char for char, idx in self._chars2idx.items()}
             self._updated = True
-        return [self._idx2chars[idx] for idx in idx_word]
+        return [self._idx2chars[idx.item()] for idx in idx_word if idx != self.char2idx('PAD')]
 
     def __len__(self):
         return len(self._chars2idx)

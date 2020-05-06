@@ -1,11 +1,12 @@
-import logging
+# Process Wikipedia to tokens, tailored to wikipedia-extractor.py dump output
+import sys
 import json
 import argparse
-import spacy
 from tqdm import tqdm
 import gensim.utils
 
-logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s', level=logging.INFO)
+sys.path.append('./src/')
+from h01_data.tokenizer_model import Tokenizer, Sentencizer
 
 
 def get_args():
@@ -25,53 +26,60 @@ def get_args():
         help="The maximum number of articles to be processed")
     # Model
     parser.add_argument(
-        "--spacy", default='xx_ent_wiki_sm', required=False,
-        help="The name of the spaCy language model (default is multilingual)")
+        "--language", type=str, required=True,
+        help="The wikipedia language to get tokenizer.")
 
     return parser.parse_args()
 
 
-def load_spacy(spacy_option):
-    logging.info("Loading spaCy model")
-    nlp = spacy.load(spacy_option)
-    spacy_tokenizer = nlp.Defaults.create_tokenizer(nlp)
-    return spacy_tokenizer
+def get_sentencizer(language):
+    print("Loading sentencizer")
+    sentencizer = Sentencizer(language)
+    return sentencizer
+
+
+def get_tokenizer(language):
+    print("Loading tokenizer")
+    tokenizer = Tokenizer(language)
+    return tokenizer
 
 
 def get_paragraphs(sections):
     paragraphs = [paragraph
                   for section in sections
-                  for paragraph in list(filter(None, section.split('\n')))]
-    paragraphs = '. '.join(paragraphs)
-    paragraphs = paragraphs.replace('\'', '')
-    return paragraphs
+                  for paragraph in list(filter(None, section.split('\n')))
+                  if paragraph.strip() != '']
+    paragraphs = [x.replace('\'', '') for x in paragraphs]
+    return [x for x in paragraphs if x.strip() != '']
 
 
-def get_sentences(article):
+def get_sentences(article, spacy_sentencizer):
     sections = article.get('section_texts')
     paragraphs = get_paragraphs(sections)
-    return list(filter(None, paragraphs.split('.')))
+    sentences = [sentence for x in paragraphs for sentence in spacy_sentencizer(x)]
+    return [x for x in sentences if x.strip() != '']
 
 
 def tokenize_sentence(spacy_tokenizer, sentence):
-    return [x.text for x in spacy_tokenizer(sentence.strip())]
+    tokens = [x.text for x in spacy_tokenizer(sentence.strip())]
+    return [x for x in tokens if x.strip() != '']
 
 
 def process_sentences(sentences, spacy_tokenizer):
     parsed_sentences = []
     for sentence in sentences:
         target_tokens = tokenize_sentence(spacy_tokenizer, sentence)
-        if len(target_tokens) > 1: # Drop sentences with only 1 token
+        if len(target_tokens) > 1:
             parsed_sentences += [' '.join(target_tokens)]
 
-    if len(parsed_sentences) <= 10: # Drop article if it contains less than 10 sentences
-        return None
-    return ' '.join(parsed_sentences)
+    if len(parsed_sentences) > 10:
+        return '\n'.join(parsed_sentences)
+    return None
 
 
-def process_article(article, spacy_tokenizer):
+def process_article(article, spacy_sentencizer, spacy_tokenizer):
     article = json.loads(article)
-    sentences = get_sentences(article)
+    sentences = get_sentences(article, spacy_sentencizer)
     parsed = process_sentences(sentences, spacy_tokenizer)
     return parsed
 
@@ -94,17 +102,15 @@ def get_n_articles(src_fname, max_articles=None):
     return n_articles
 
 
-def tokenize_wikipedia(src_fname, tgt_fname, spacy_tokenizer,
+def tokenize_wikipedia(src_fname, tgt_fname, spacy_sentencizer, spacy_tokenizer,
                        dump_size, max_articles):
-    logging.info('Getting wikipedia number of articles')
     n_articles = get_n_articles(src_fname, max_articles=max_articles)
     processed_articles = []
 
-    logging.info('Preprocessing wikipedia')
     with gensim.utils.open(src_fname, 'rb') as f:
         for article_id, article in tqdm(enumerate(f), total=n_articles,
                                         desc='Tokenizing wikipedia', mininterval=.2):
-            processed_article = process_article(article, spacy_tokenizer)
+            processed_article = process_article(article, spacy_sentencizer, spacy_tokenizer)
             if processed_article is not None:
                 processed_articles += [processed_article]
 
@@ -119,19 +125,21 @@ def tokenize_wikipedia(src_fname, tgt_fname, spacy_tokenizer,
         write_txt(tgt_fname, processed_articles)
 
 
-def process(src_fname, tgt_fname, spacy_option, dump_size, max_articles):
-    spacy_tokenizer = load_spacy(spacy_option)
+def process(src_fname, tgt_fname, language, dump_size, max_articles):
+    spacy_sentencizer = get_sentencizer(language)
+    spacy_tokenizer = get_tokenizer(language)
 
-    tokenize_wikipedia(src_fname, tgt_fname, spacy_tokenizer, dump_size, max_articles)
-    logging.info("Completed %s, dumped to %s", src_fname, tgt_fname)
+    tokenize_wikipedia(src_fname, tgt_fname, spacy_sentencizer, spacy_tokenizer,
+                       dump_size, max_articles)
+    print("Completed %s, dumped to %s", src_fname, tgt_fname)
 
 
 def main():
     args = get_args()
-    logging.info(args)
+    print(args)
 
-    process(args.wikipedia_raw_file, args.wikipedia_tokenized_file,
-            args.spacy, args.dump_size, args.max_articles)
+    process(args.wikipedia_raw_file, args.wikipedia_tokenized_file, args.language,
+            args.dump_size, args.max_articles)
 
 
 if __name__ == '__main__':
