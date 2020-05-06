@@ -68,7 +68,7 @@ def train(trainloader, devloader, model, eval_batches, wait_iterations):
 
 def _evaluate(evalloader, model):
     dev_loss, n_instances = 0, 0
-    for x, y, weights, _ in evalloader:
+    for x, y, weights, _, _ in evalloader:
         y_hat = model(x)
         loss = model.get_loss(y_hat, y).sum(-1)
         dev_loss += (loss * weights).sum()
