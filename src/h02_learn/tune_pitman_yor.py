@@ -18,7 +18,7 @@ def get_args():
     argparser.add_argument('--no-betas', type=int, required=True)
     argparser.add_argument('--beta-end', type=int)
     argparser.add_argument('--adaptor-iterations', type=int, default=10)
-    argparser.add_argument('--two-stage-state-folder', type=str, required=True)
+    argparser.add_argument('--best-adaptor-state-folder', type=str, required=True)
     add_all_defaults(argparser)
     args = parse_args(argparser)
     args.wait_iterations = args.wait_epochs * args.eval_batches
@@ -43,7 +43,7 @@ def tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas):
     for alpha in alphas:
         for beta in betas:
             generator = load_generator(args.generator_path)
-            adaptor = Adaptor.load(args.two_stage_state_folder)
+            adaptor = Adaptor(alpha, beta, alphabet, '', save_state=False)
             dev_loss = \
                 train_two_stage_model(generator, adaptor, trainloader, devloader, \
                                         alphabet, type_trainloader, args)
@@ -52,8 +52,8 @@ def tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas):
                 print('New best loss')
                 best_loss = dev_loss
                 best_params = (alpha, beta)
-                print('Saving adaptor state to', args.adaptor_state_file)
-                adaptor.save_fitted_state(args.best_adaptor_state_file)
+                print('Saving adaptor state to', args.best_adaptor_state_folder)
+                adaptor.save_fitted_state(args.best_adaptor_state_folder)
             train_loss = evaluate_adaptor(trainloader, generator, adaptor)
             tuning_results += \
                 construct_pitman_yor_tuning_results(generator, alpha, beta, train_loss, dev_loss)
