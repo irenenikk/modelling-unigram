@@ -24,9 +24,20 @@ def write_data(filename, embeddings):
         pickle.dump(embeddings, f)
 
 
+def write_torch_data(filename, embeddings):
+    with open(filename, "wb") as f:
+        torch.save(embeddings, f)
+
+
 def read_data(filename):
     with open(filename, "rb") as f:
         embeddings = pickle.load(f)
+    return embeddings
+
+
+def read_torch_data(filename):
+    with open(filename, "rb") as f:
+        embeddings = torch.load(f)
     return embeddings
 
 

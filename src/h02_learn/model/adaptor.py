@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 import torch
 from tqdm import tqdm
-from util.util import write_data, read_data, create_int_defaultdict
+from util.util import write_torch_data, read_torch_data, create_int_defaultdict
 
 
 class Adaptor:
@@ -38,7 +38,7 @@ class Adaptor:
     def load(cls, state_folder):
         state_file = cls.get_state_file(state_folder)
         print('Loading fitted adaptor from', state_file)
-        checkpoint = read_data(state_file)
+        checkpoint = read_torch_data(state_file)
         adaptor = cls(**checkpoint['kwargs'])
         adaptor.set_state(checkpoint['state'])
         return adaptor
@@ -99,7 +99,7 @@ class Adaptor:
         if state_folder is None:
             saved_state_folder = self.saved_state_folder
         adaptor_state_file = self.get_state_file(saved_state_folder)
-        write_data(adaptor_state_file, self.state)
+        write_torch_data(adaptor_state_file, self.state)
 
     def customer_enters(self, word, word_logprob):
         customers_in_tables = self.state['customers_in_tables_with_label'][word]

@@ -11,12 +11,14 @@ from util import util
 
 def get_args():
     argparser = get_argparser()
-    argparser.add_argument('--epochs', type=int, default=5)
+    # Data
+    argparser.add_argument('--max-train-tokens', type=int)
     # Optimization
+    argparser.add_argument('--epochs', type=int, default=5)
     argparser.add_argument('--eval-batches', type=int, default=200)
     argparser.add_argument('--wait-epochs', type=int, default=5)
     # Save
-    argparser.add_argument('--generator-path', type=str)
+    argparser.add_argument('--generator-path', type=str, required=True)
     argparser.add_argument('--adaptor-results-file', type=str, required=True)
     # adaptor
     argparser.add_argument('--no-alphas', type=float, required=True)
@@ -70,7 +72,8 @@ def main():
     folds = [list(range(8)), [8], [9]]
 
     trainloader, devloader, alphabet = \
-        get_data_loaders_with_folds(args.dataset, args.data_file, folds, args.batch_size)
+        get_data_loaders_with_folds('tokens', args.data_file, folds, args.batch_size,\
+                                    max_train_tokens=args.max_train_tokens)
     print('Train size: %d Dev size %d' %
           (len(trainloader.dataset), len(devloader.dataset)))
 
