@@ -7,20 +7,16 @@ sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.model import LstmLM
 from h02_learn.train_info import TrainInfo
-from util.argparser import get_argparser, parse_args
+from util.argparser import get_argparser, parse_args, add_all_defaults
 from util import util
 from util import constants
 
 
 def get_args():
     argparser = get_argparser()
-    # Optimization
-    argparser.add_argument('--eval-batches', type=int, default=200)
-    argparser.add_argument('--wait-epochs', type=int, default=5)
-    # Save
-    argparser.add_argument('--generator-path', type=str)
-    argparser.add_argument('--max-train-tokens', type=int)
+    argparser.add_argument('--dataset', type=str)
 
+    add_all_defaults(argparser)
     args = parse_args(argparser)
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args

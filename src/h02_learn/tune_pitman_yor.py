@@ -6,27 +6,20 @@ from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
 from h02_learn.train_two_stage import train_two_stage_model, load_generator, Adaptor
 from h02_learn.dataset.types_from_tokens import TypesFromTokensDataset
 from h03_eval.eval_two_stage import evaluate_adaptor
-from util.argparser import get_argparser, parse_args
+from util.argparser import get_argparser, parse_args, add_all_defaults
 from util import util
 
 def get_args():
     argparser = get_argparser()
-    # Data
-    argparser.add_argument('--max-train-tokens', type=int)
-    # Optimization
-    argparser.add_argument('--epochs', type=int, default=5)
-    argparser.add_argument('--eval-batches', type=int, default=200)
-    argparser.add_argument('--wait-epochs', type=int, default=5)
     # Save
-    argparser.add_argument('--generator-path', type=str, required=True)
-    argparser.add_argument('--adaptor-results-file', type=str, required=True)
+    argparser.add_argument('--results-file', type=str, required=True)
     # adaptor
     argparser.add_argument('--no-alphas', type=float, required=True)
     argparser.add_argument('--no-betas', type=int, required=True)
     argparser.add_argument('--beta-end', type=int)
     argparser.add_argument('--adaptor-iterations', type=int, default=10)
-    argparser.add_argument('--adaptor-state-file', type=str, required=True)
-    argparser.add_argument('--load-adaptor-init-state', default=False, action='store_true')
+    argparser.add_argument('--two-stage-state-folder', type=str, required=True)
+    add_all_defaults(argparser)
     args = parse_args(argparser)
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
