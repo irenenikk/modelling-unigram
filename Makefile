@@ -145,5 +145,7 @@ $(XML_FILE):
 	wget -P $(WIKI_DIR) $(WIKIURL)
 
 tune_hyperparams: $(PROCESSED_DATA_FILE) $(CHECKPOINT_TYPE_FILE)
+	mkdir -p $(CHECKPOINT_DIR_LANG)/hyperparam_tuning
+	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/tune_pitman_yor.py --results-file $(RESULTS_DIR_LANG)/hyperparam_tuning_results --no-alphas $(NO_ALPHAS) --no-betas $(NO_BETAS)\
 			--two-stage-state-folder $(CHECKPOINT_DIR_LANG)/hyperparam_tuning --data-file $(PROCESSED_DATA_FILE) --max-train-tokens $(MAX_TRAIN_TOKENS) --generator-path $(CHECKPOINT_TYPE_PATH)
