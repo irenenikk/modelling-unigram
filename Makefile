@@ -6,6 +6,7 @@ DATA_DIR_BASE := ./data
 # used in hyperparameter tuning
 NO_BETAS = 10
 NO_ALPHAS = 10
+EPOCHS = 5
 DATA_DIR_LANG := $(DATA_DIR_BASE)/$(LANGUAGE)
 WIKI_DIR := $(DATA_DIR_LANG)/wiki
 CHECKPOINT_DIR_BASE := ./checkpoint
@@ -95,7 +96,7 @@ run_two_stage_type_training: $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(TWO_STAGE_INIT_TYPE_STATE_FOLDER)
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/train_two_stage.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --adaptor-results-file $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE) \
-			--alpha $(ALPHA) --beta $(BETA) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --max-train-tokens $(MAX_TRAIN_TOKENS)
+			--alpha $(ALPHA) --beta $(BETA) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --max-train-tokens $(MAX_TRAIN_TOKENS) --epochs $(EPOCHS)
 
 # Train two-stage model initialising with tokens
 run_two_stage_token_training: $(CHECKPOINT_TOKEN_FILE)
@@ -103,7 +104,7 @@ run_two_stage_token_training: $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER)
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/train_two_stage.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --adaptor-results-file $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) \
-			--alpha $(ALPHA) --beta $(BETA) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --max-train-tokens $(MAX_TRAIN_TOKENS)
+			--alpha $(ALPHA) --beta $(BETA) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --max-train-tokens $(MAX_TRAIN_TOKENS) --epochs $(EPOCHS)
 
 # Eval language models
 $(GENERATOR_RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
