@@ -14,7 +14,6 @@ from util import constants
 
 def get_args():
     argparser = get_argparser()
-    argparser.add_argument('--dataset', type=str)
 
     add_all_defaults(argparser)
     args = parse_args(argparser)
