@@ -18,6 +18,7 @@ def add_data_args(parser):
     parser.add_argument('--max-train-tokens', type=int)
     parser.add_argument('--data-file', type=str, required=True)
     parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--dataset', type=str)
 
 def add_generator_args(parser):
     # Model defaults

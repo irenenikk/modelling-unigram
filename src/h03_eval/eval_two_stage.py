@@ -7,7 +7,7 @@ from h02_learn.train_generator import load_generator
 from h02_learn.model.adaptor import Adaptor
 from h02_learn.train_two_stage import evaluate_adaptor
 from util import util
-from util.argparser import get_argparser, parse_args
+from util.argparser import get_argparser, parse_args, add_data_args
 
 def get_args():
     argparser = get_argparser()
@@ -15,6 +15,7 @@ def get_args():
     argparser.add_argument('--adaptor-results-file', type=str, required=True)
     # adaptor
     argparser.add_argument('--two-stage-state-folder', type=str, required=True)
+    add_data_args(argparser)
     args = parse_args(argparser)
     return args
 
