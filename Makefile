@@ -64,7 +64,7 @@ get_wiki: $(PROCESSED_DATA_FILE)
 clean:
 	rm $(PROCESSED_DATA_FILE)
 
-tune_hyperparams: tune_hyperparams
+tune_hyperparams: tune_hyperparameters
 	echo "Finished hyperparameter tuning for" $(LANGUAGE)
 
 
@@ -145,7 +145,7 @@ $(XML_FILE):
 	mkdir -p $(WIKI_DIR)
 	wget -P $(WIKI_DIR) $(WIKIURL)
 
-tune_hyperparams: $(PROCESSED_DATA_FILE) $(CHECKPOINT_TYPE_FILE)
+tune_hyperparameters: $(PROCESSED_DATA_FILE) $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_DIR_LANG)/hyperparam_tuning
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/tune_pitman_yor.py --results-file $(RESULTS_DIR_LANG)/hyperparam_tuning_results --no-alphas $(NO_ALPHAS) --no-betas $(NO_BETAS)\

@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 sys.path.append('./src/')
 from h01_data.alphabet import Alphabet
-from util.argparser import get_argparser, parse_args
+from util.argparser import get_argparser, parse_args, add_data_args
 from util import util
 
 
