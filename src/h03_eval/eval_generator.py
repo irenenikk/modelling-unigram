@@ -67,7 +67,7 @@ def main():
               (dataset, len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
     results = eval_all(model_paths, dataloaders)
-    util.write_csv(args.results_file, results)
+    util.overwrite_csv(args.results_file, results)
 
 
 if __name__ == '__main__':
