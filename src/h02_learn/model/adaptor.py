@@ -95,11 +95,10 @@ class Adaptor:
         return torch.log(state1 + adaptor_state*generator_prob)-torch.log(i+self.state['beta'])
 
     def save_fitted_state(self, state_folder=None):
-        saved_state_folder = state_folder
         if state_folder is None:
-            saved_state_folder = self.saved_state_folder
-        adaptor_state_file = self.get_state_file(saved_state_folder)
-        write_torch_data(adaptor_state_file, self.state)
+            state_folder = self.saved_state_folder
+        adaptor_state_file = self.get_state_file(state_folder)
+        write_data(adaptor_state_file, self.get_checkpoint())
 
     def customer_enters(self, word, word_logprob):
         customers_in_tables = self.state['customers_in_tables_with_label'][word]
