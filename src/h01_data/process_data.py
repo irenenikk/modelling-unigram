@@ -20,6 +20,7 @@ def get_args():
     argparser.add_argument(
         "--max-sentences", type=int, default=4000,
         help="Maximum number of sentences used")
+    add_data_args(argparser)
     return parse_args(argparser)
 
 
