@@ -44,16 +44,16 @@ TWO_STAGE_INIT_TYPE_ON_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluati
 TWO_STAGE_INIT_TOKEN_ON_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluation_init_token_on_type.csv
 
 
-all: get_wiki train_generator train_two_stage eval_generator
+all: get_wiki train_generator train_two_stage eval_generator eval_two_stage
 
 train_two_stage: run_two_stage_type_training run_two_stage_token_training
 	echo "Finished training two-stage model" $(LANGUAGE)
 
 eval_generator: $(GENERATOR_RESULTS_FILE)
-	echo "Finished evaluating model" $(LANGUAGE)
+	echo "Finished evaluating generator" $(LANGUAGE)
 
 eval_two_stage: run_two_stage_token_evaluation run_two_stage_type_evaluation
-	echo "Finished evaluating model" $(LANGUAGE)
+	echo "Finished evaluating two-stage model" $(LANGUAGE)
 
 train_generator: $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
 	echo "Finished training model" $(LANGUAGE)
