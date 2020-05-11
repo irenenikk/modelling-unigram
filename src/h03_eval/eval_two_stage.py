@@ -19,15 +19,15 @@ def get_args():
     args = parse_args(argparser)
     return args
 
-def save_pitman_yor_results(model, alpha, beta, train_loss,\
+def save_pitman_yor_results(model, dataset, alpha, beta, train_loss,\
                             dev_loss, test_loss, test_size, results_fname):
     print('Saving to', results_fname)
     results = []
     file_size = os.path.getsize(results_fname) if os.path.exists(results_fname) else 0
     if file_size == 0:
-        results = [['alphabet_size', 'embedding_size', 'hidden_size', 'nlayers', 'dropout_p',\
+        results = [['dataset', 'alphabet_size', 'embedding_size', 'hidden_size', 'nlayers', 'dropout_p',\
                      'alpha', 'beta', 'train_loss', 'dev_loss', 'test_loss', 'test_size']]
-    results += [[model.alphabet_size, model.embedding_size, model.hidden_size, model.nlayers,\
+    results += [[dataset, model.alphabet_size, model.embedding_size, model.hidden_size, model.nlayers,\
                 model.dropout_p, alpha, beta, train_loss, dev_loss, test_loss, test_size]]
     util.write_csv(results_fname, results)
 
@@ -55,7 +55,7 @@ def main():
 
     alpha = adaptor.state['alpha']
     beta = adaptor.state['beta']
-    save_pitman_yor_results(generator, alpha, beta, train_loss, dev_loss, test_loss,\
+    save_pitman_yor_results(generator, args.dataset, alpha, beta, train_loss, dev_loss, test_loss,\
                             len(testloader.dataset), args.adaptor_results_file)
 
 
