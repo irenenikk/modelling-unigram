@@ -39,7 +39,7 @@ class Adaptor:
         state_file = cls.get_state_file(state_folder)
         print('Loading fitted adaptor from', state_file)
         checkpoint = read_torch_data(state_file)
-        adaptor = cls(**checkpoint['kwargs'])
+        adaptor = cls(**checkpoint['kwargs'], state_folder=state_folder)
         adaptor.set_state(checkpoint['state'])
         return adaptor
 
