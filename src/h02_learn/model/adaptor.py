@@ -98,7 +98,7 @@ class Adaptor:
         if state_folder is None:
             state_folder = self.saved_state_folder
         adaptor_state_file = self.get_state_file(state_folder)
-        write_data(adaptor_state_file, self.get_checkpoint())
+        write_torch_data(adaptor_state_file, self.get_checkpoint())
 
     def customer_enters(self, word, word_logprob):
         customers_in_tables = self.state['customers_in_tables_with_label'][word]
