@@ -86,3 +86,9 @@ def hacked_exp(x):
 
 def create_int_defaultdict():
     return defaultdict(int)
+
+def permute_dict(dictionary):
+    keys = list(dictionary.keys())
+    values = list(dictionary.values())
+    permuted_values = np.random.permutation(values)
+    return dict(zip(keys, permuted_values))

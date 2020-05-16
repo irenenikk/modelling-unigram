@@ -1,5 +1,6 @@
 import sys
 import logging
+import string
 import numpy as np
 from tqdm import tqdm
 
@@ -41,12 +42,19 @@ def get_fold_splits(n_sentences, n_folds, max_sentences=None):
     splits = {x: i for i, fold in enumerate(splits) for x in fold}
     return splits
 
-
-def process_line(line, word_info, alphabet):
-    for word in line.strip().split(' '):
+def process_line(line, word_info, sentence_list, alphabet):
+    # remove punctuation
+    line = line.translate(str.maketrans('', '', string.punctuation))
+    sentence = list(filter(None, line.strip().split(' ')))
+    # only accept words without extra symbols
+    is_allowed = all([all([char in string.ascii_lowercase
+                      for char in word.lower()])
+                      for word in sentence])
+    if not is_allowed:
+        return
+    sentence_list.append(sentence)
+    for word in sentence:
         # exclude words that contain non-letters
-        if not word.isalpha():
-            continue
         word = word.lower()
         alphabet.add_word(word)
 
@@ -60,14 +68,15 @@ def process_line(line, word_info, alphabet):
 
 
 def process_data(src_fname, n_folds, splits, alphabet):
-    folds = [{} for _ in range(n_folds)]
+    word_folds = [{} for _ in range(n_folds)]
+    sentence_folds = [[] for _ in range(n_folds)]
     with open(src_fname, 'r') as f:
         for i, line in tqdm(enumerate(f), desc='Processing wiki data',
                             total=len(splits)):
             if i in splits:
                 fold = splits[i]
-                process_line(line, folds[fold], alphabet)
-    return folds
+                process_line(line, word_folds[fold], sentence_folds[fold], alphabet)
+    return word_folds, sentence_folds
 
 
 def count_tokens(folds):
@@ -84,10 +93,10 @@ def process(src_fname, tgt_fname, n_folds, max_sentences=None):
     splits = get_fold_splits(n_sentences, n_folds, max_sentences=max_sentences)
     alphabet = Alphabet()
 
-    folds = process_data(src_fname, n_folds, splits, alphabet)
-    n_tokens = count_tokens(folds)
-    n_types = count_types(folds)
-    util.write_data(tgt_fname, (folds, alphabet, n_tokens))
+    word_folds, sentence_folds = process_data(src_fname, n_folds, splits, alphabet)
+    n_tokens = count_tokens(word_folds)
+    n_types = count_types(word_folds)
+    util.write_data(tgt_fname, (word_folds, sentence_folds, alphabet, n_tokens))
 
     print('# unique chars:', len(alphabet))
     print('# tokens per fold:', n_tokens)

@@ -52,7 +52,7 @@ def load_data(fname):
 
 
 def get_alphabet(data):
-    _, alphabet, _ = data
+    _, _, alphabet, _ = data
     return alphabet
 
 
