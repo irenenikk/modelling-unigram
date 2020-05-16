@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 from util.util import write_torch_data, read_torch_data, create_int_defaultdict
+from util import constants
 
 
 class Adaptor:
@@ -29,8 +30,8 @@ class Adaptor:
         state['tables_with_word_label'] = defaultdict(int)
         state['assigned_to_table'] = None
         state['total_tables'] = 0
-        state['alpha'] = torch.Tensor([self.alpha])
-        state['beta'] = torch.Tensor([self.beta])
+        state['alpha'] = torch.Tensor([self.alpha]).to(device=constants.device)
+        state['beta'] = torch.Tensor([self.beta]).to(device=constants.device)
         state['alphabet'] = self.alphabet
         return state
 
