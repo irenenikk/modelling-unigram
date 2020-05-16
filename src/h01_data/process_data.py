@@ -48,7 +48,7 @@ def process_line(line, word_info, sentence_list, alphabet):
     sentence = list(filter(None, line.strip().split(' ')))
     # only accept words without extra symbols
     is_allowed = all([all([char in string.ascii_lowercase
-                      for char in word.lower()])
+                           for char in word.lower()])
                       for word in sentence])
     if not is_allowed:
         return
