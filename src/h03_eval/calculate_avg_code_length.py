@@ -81,7 +81,7 @@ def get_generator_word_probability(generator, word, alphabet):
 def calculate_word_probability(word, adaptor, generator, alphabet):
     generator_logprob = get_generator_word_probability(generator, word, alphabet)
     word_logprob = adaptor.get_token_logprobability(generator_logprob, word)
-    return np.exp(word_logprob)
+    return torch.exp(word_logprob).item()
 
 
 def calculate_two_stage_type_probs(sentences, adaptor, generator, alphabet):
@@ -133,8 +133,8 @@ def main():
     print('Natural code average sentence length with permuted lengths', natural_permuted_code_average)
     print('Two-stage code average sentence length', two_stage_code_average)
 
-    save_pitman_yor_results(generator, args.dataset, alpha, beta, train_loss, dev_loss, test_loss,\
-                            len(testloader.dataset), args.adaptor_results_file)
+    #save_pitman_yor_results(generator, args.dataset, alpha, beta, train_loss, dev_loss, test_loss,\
+    #                        len(testloader.dataset), args.adaptor_results_file)
 
 
 if __name__ == '__main__':
