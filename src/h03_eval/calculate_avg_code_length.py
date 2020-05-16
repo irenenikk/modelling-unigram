@@ -72,7 +72,10 @@ def get_generator_word_probability(generator, word, alphabet):
     y = word_char_indices[1:]
     x_batch = torch.LongTensor([x]).to(device=constants.device)
     y_batch = torch.LongTensor([y]).to(device=constants.device)
-    return generator.get_word_log_probability(x_batch, y_batch)
+    generator.eval()
+    with torch.no_grad():
+        prob = generator.get_word_log_probability(x_batch, y_batch)
+    return prob
 
 
 def calculate_word_probability(word, adaptor, generator, alphabet):
@@ -120,7 +123,6 @@ def main():
     test_sentences = sentence_data[folds[2][0]]
 
     generator = load_generator(args.two_stage_state_folder)
-    generator.eval()
     adaptor = Adaptor.load(args.two_stage_state_folder)
 
     natural_code_average = calculate_natural_code_average(dev_sentences)
