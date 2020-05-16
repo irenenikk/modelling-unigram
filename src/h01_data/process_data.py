@@ -45,7 +45,7 @@ def get_fold_splits(n_sentences, n_folds, max_sentences=None):
 def process_line(line, word_info, sentence_list, alphabet):
     # remove punctuation
     line = line.translate(str.maketrans('', '', string.punctuation))
-    sentence = list(filter(None, line.strip().split(' ')))
+    sentence = [word.lower() for word in list(filter(None, line.strip().split(' ')))]
     # only accept words without extra symbols
     is_allowed = all([all([char in string.ascii_lowercase
                            for char in word.lower()])

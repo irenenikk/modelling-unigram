@@ -2,6 +2,7 @@ import os
 import sys
 import math
 import numpy as np
+import torch
 
 sys.path.append('./src/')
 from h02_learn.dataset import load_data
@@ -9,6 +10,7 @@ from h02_learn.train_generator import load_generator
 from h02_learn.model.adaptor import Adaptor
 from util import util
 from util.argparser import get_argparser, parse_args, add_data_args, add_generator_args
+from util import constants
 
 def get_args():
     argparser = get_argparser()
@@ -58,7 +60,7 @@ def calculate_word_lengths(sentences):
     return lengths
 
 
-def get_word_idx(self, word, alphabet):
+def get_word_idx(word, alphabet):
     return [alphabet.char2idx('SOS')] + \
             alphabet.word2idx(word) + \
             [alphabet.char2idx('EOS')]
@@ -68,8 +70,8 @@ def get_generator_word_probability(generator, word, alphabet):
     word_char_indices = get_word_idx(word, alphabet)
     x = word_char_indices[:-1]
     y = word_char_indices[1:]
-    x_batch = torch.LongTensor([x])
-    y_batch = torch.LongTensor([y])
+    x_batch = torch.LongTensor([x]).to(device=constants.device)
+    y_batch = torch.LongTensor([y]).to(device=constants.device)
     return generator.get_word_log_probability(x_batch, y_batch)
 
 
