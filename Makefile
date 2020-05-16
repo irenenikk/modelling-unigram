@@ -127,7 +127,7 @@ $(CHECKPOINT_TYPE_FILE): $(PROCESSED_DATA_FILE)
 # Preprocess Data
 $(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)
 	echo "Process data"
-	python src/h01_data/process_data.py --wikipedia-tokenized-file $(TOKENIZED_FILE) --data-file $(PROCESSED_DATA_FILE)
+	python src/h01_data/process_data.py --wikipedia-tokenized-file $(TOKENIZED_FILE) --data-file $(PROCESSED_DATA_FILE) --language $(LANGUAGE)
 
 # Tokenize wikipedia
 $(TOKENIZED_FILE): $(JSON_FILE)
