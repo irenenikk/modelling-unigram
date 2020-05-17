@@ -156,5 +156,5 @@ tune_hyperparameters: $(PROCESSED_DATA_FILE) $(CHECKPOINT_TYPE_FILE)
 
 calculate_avg_sentence_len: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h03_eval/calculate_avg_code_length.py --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --data-file $(PROCESSED_DATA_FILE)
-	python src/h03_eval/calculate_avg_code_length.py --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --data-file $(PROCESSED_DATA_FILE)	
+	python src/h03_eval/calculate_avg_code_length.py --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --data-file $(PROCESSED_DATA_FILE) --results-file $(RESULTS_DIR_LANG)/average_sentence_lengths.txt
+	python src/h03_eval/calculate_avg_code_length.py --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --data-file $(PROCESSED_DATA_FILE) --results-file $(RESULTS_DIR_LANG)/average_sentence_lengths.txt
