@@ -16,7 +16,7 @@ def get_args():
     argparser = get_argparser()
     # adaptor
     argparser.add_argument('--two-stage-state-folder', type=str, required=True)
-    argparser.add_argument('--results_file', type=str, required=True)
+    argparser.add_argument('--results-file', type=str, required=True)
     add_data_args(argparser)
     add_generator_args(argparser)
     args = parse_args(argparser)
