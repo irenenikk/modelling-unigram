@@ -6,7 +6,7 @@ import torch
 import scipy.stats as stats
 
 sys.path.append('./src/')
-from h02_learn.dataset import load_data
+from h02_learn.dataset import load_data, get_data_loaders_with_folds
 from h02_learn.train_generator import load_generator
 from h02_learn.model.adaptor import Adaptor
 from util import util
@@ -26,17 +26,17 @@ def get_args():
 
 def save_results(model, dev_natural_code_avg, dev_permuted_natural_code_avg, dev_two_stage_code_avg,\
                     natural_correlation, permuted_correlation, two_stage_correlation,\
-                    alphabet_size, dev_sentences, test_sentences, n_tokens, results_fname, test):
+                    alphabet_size, dev_sentences, test_sentences, results_fname, test):
     print('Saving to', results_fname)
     results = []
     file_size = os.path.getsize(results_fname) if os.path.exists(results_fname) else 0
     if file_size == 0:
         results = [['model', 'dev_natural_code_avg', 'dev_permuted_natural_code_avg', 'dev_two_stage_code_avg',\
                     'natural_correlation', 'permuted_correlation', 'two_stage_correlation',\
-                    'alphabet_size', 'dev_sentences', 'test_sentences', 'n_tokens', 'test']]
+                    'alphabet_size', 'dev_sentences', 'test_sentences', 'test']]
     results += [[model, dev_natural_code_avg, dev_permuted_natural_code_avg, dev_two_stage_code_avg,\
                 natural_correlation, permuted_correlation, two_stage_correlation,\
-                alphabet_size, dev_sentences, test_sentences, n_tokens, test]]
+                alphabet_size, dev_sentences, test_sentences, test]]
     util.write_csv(results_fname, results)
 
 
@@ -114,7 +114,7 @@ def calculate_permuted_code_lengths(sentences):
 
 
 def calculate_random_code_average(sentences):
-    permuted_code_lengths = calculate_permuted_code_lengths
+    permuted_code_lengths = calculate_permuted_code_lengths(sentences)
     return average_sentence_length(sentences, permuted_code_lengths)
 
 
@@ -134,7 +134,7 @@ def correlation(type_lengths, type_freqs):
     freqs = [type_freqs[k] for k in type_freqs.keys()]
     pearson = stats.pearsonr(lengths, freqs)
     spearman = stats.spearmanr(lengths, freqs)
-    return pearson, spearman
+    return pearso[0]n, spearman[0]
 
 
 def calculate_all_correlatios(sentences, adaptor, generator, alphabet, type_freqs):
@@ -148,15 +148,14 @@ def calculate_all_correlatios(sentences, adaptor, generator, alphabet, type_freq
 
 
 def main():
-    # pylint: disable=all
     args = get_args()
     folds = [list(range(8)), [8], [9]]
 
     data = load_data(args.data_file)
-    _, sentence_data, alphabet, n_tokens = data
+    _, sentence_data, alphabet, _ = data
     dev_sentences = sentence_data[folds[1][0]]
     test_sentences = sentence_data[folds[2][0]]
-    _, dev_loader, test_loader = get_data_loaders_with_folds('tokens', args.data_file, folds,\
+    _, dev_loader, test_loader, _ = get_data_loaders_with_folds('tokens', args.data_file, folds,\
                                                              args.batch_size, test=True)    
 
     generator = load_generator(args.two_stage_state_folder)
@@ -171,9 +170,9 @@ def main():
     test_two_stage_code_average = calculate_two_stage_code_average(test_sentences, adaptor, generator, alphabet)
 
     dev_natural_correlation, dev_permuted_correlation, dev_two_stage_correlation = \
-        calculate_all_correlatios(dev_sentences, adaptor, generator, alphabet, dev_loader.word_freqs)
+        calculate_all_correlatios(dev_sentences, adaptor, generator, alphabet, dict(dev_loader.dataset.word_freqs))
     test_natural_correlation, test_permuted_correlation, test_two_stage_correlation = \
-        calculate_all_correlatios(test_sentences, adaptor, generator, alphabet, test_loader.word_freqs)
+        calculate_all_correlatios(test_sentences, adaptor, generator, alphabet, dict(test_loader.dataset.word_freqs))
 
     print('Natural code average sentence length in dev:', dev_natural_code_average, 'in test:', test_natural_code_average)
     print('Natural code average sentence length with permuted lengths in dev:', dev_natural_permuted_code_average, 'in test:', test_natural_permuted_code_average)
@@ -181,10 +180,10 @@ def main():
 
     save_results(args.two_stage_state_folder, dev_natural_code_average, dev_natural_permuted_code_average,\
                     dev_two_stage_code_average, dev_natural_correlation, dev_permuted_correlation, dev_two_stage_correlation,
-                    len(alphabet), len(dev_sentences), len(test_sentences), n_tokens, args.results_file, test=False)
-    save_results(args.two_stage_state_folder, testnatural_code_average, testnatural_permuted_code_average,\
-                    testtwo_stage_code_average, testnatural_correlation, testpermuted_correlation, testtwo_stage_correlation,
-                    len(alphabet), len(dev_sentences), len(test_sentences), n_tokens, args.results_file, test=True)
+                    len(alphabet), len(dev_sentences), len(test_sentences), args.results_file, test=False)
+    save_results(args.two_stage_state_folder, test_natural_code_average, test_natural_permuted_code_average,\
+                    test_two_stage_code_average, test_natural_correlation, test_permuted_correlation, test_two_stage_correlation,
+                    len(alphabet), len(dev_sentences), len(test_sentences), args.results_file, test=True)
 
 
 if __name__ == '__main__':
