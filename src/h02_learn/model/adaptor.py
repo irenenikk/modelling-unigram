@@ -9,11 +9,12 @@ from util.util import write_torch_data, read_torch_data, create_int_defaultdict
 class Adaptor:
     # pylint: disable=too-many-locals
 
-    def __init__(self, alpha, beta, state_folder, save_state=True):
+    def __init__(self, alpha, beta, alphabet, state_folder, save_state=True):
         self.alpha = alpha
         self.beta = beta
         self.saved_state_folder = state_folder
         self.save_state = save_state
+        self.alphabet = alphabet
 
         self.state = self.get_initial_state()
 
@@ -30,6 +31,7 @@ class Adaptor:
         state['total_tables'] = 0
         state['alpha'] = torch.Tensor([self.alpha])
         state['beta'] = torch.Tensor([self.beta])
+        state['alphabet'] = self.alphabet
         return state
 
     @classmethod
