@@ -40,14 +40,16 @@ def average_sentence_length(sentences, type_lengths):
     return np.mean(lengths), np.std(lengths)
 
 
-def calculate_word_lengths_under_code(sentences, type_probs, alphabet_size):
+def calculate_word_lengths_under_code(sentences, type_logprobs, alphabet_size):
     type_lengths = {}
     for sentence in sentences:
         sentence_length = 0
         for word in sentence:
             if word in type_lengths:
                 continue
-            code_length = math.ceil(-math.log(type_probs[word], alphabet_size))
+            original_logprob = type_logprobs[word]
+            new_logprob = original_logprob/np.log(alphabet_size)
+            code_length = math.ceil(-new_logprob)
             type_lengths[word] = code_length
     return type_lengths
 
@@ -78,21 +80,21 @@ def get_generator_word_probability(generator, word, alphabet):
     return prob
 
 
-def calculate_word_probability(word, adaptor, generator, alphabet):
+def calculate_word_logprobability(word, adaptor, generator, alphabet):
     generator_logprob = get_generator_word_probability(generator, word, alphabet)
     word_logprob = adaptor.get_token_logprobability(generator_logprob, word)
-    return torch.exp(word_logprob).item()
+    return word_logprob.item()
 
 
 def calculate_two_stage_type_probs(sentences, adaptor, generator, alphabet):
-    type_probs = {}
+    type_logprobs = {}
     for sentence in sentences:
         for word in sentence:
-            if word in type_probs:
+            if word in type_logprobs:
                 continue
-            prob = calculate_word_probability(word, adaptor, generator, alphabet)
-            type_probs[word] = prob
-    return type_probs
+            logprob = calculate_word_logprobability(word, adaptor, generator, alphabet)
+            type_logprobs[word] = logprob
+    return type_logprobs
 
 
 def calculate_natural_code_average(sentences):
@@ -107,8 +109,8 @@ def calculate_random_code_average(sentences):
 
 
 def calculate_two_stage_code_average(sentences, adaptor, generator, alphabet):
-    type_probs = calculate_two_stage_type_probs(sentences, adaptor, generator, alphabet)
-    type_code_lengths = calculate_word_lengths_under_code(sentences, type_probs, len(alphabet))
+    type_logprobs = calculate_two_stage_type_probs(sentences, adaptor, generator, alphabet)
+    type_code_lengths = calculate_word_lengths_under_code(sentences, type_logprobs, len(alphabet))
     return average_sentence_length(sentences, type_code_lengths)
 
 
