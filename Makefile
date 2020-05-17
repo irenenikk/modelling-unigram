@@ -44,7 +44,7 @@ TWO_STAGE_INIT_TYPE_ON_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluati
 TWO_STAGE_INIT_TOKEN_ON_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluation_init_token_on_type.csv
 
 
-all: get_wiki train_generator train_two_stage eval_generator eval_two_stage
+all: get_wiki train_generator train_two_stage eval_generator eval_two_stage calculate_average_sentence_length
 
 train_two_stage: run_two_stage_type_training run_two_stage_token_training
 	echo "Finished training two-stage model" $(LANGUAGE)
@@ -66,6 +66,9 @@ clean:
 
 tune_hyperparams: tune_hyperparameters
 	echo "Finished hyperparameter tuning for" $(LANGUAGE)
+
+calculate_average_sentence_length: calculate_avg_sentence_len
+	echo "Finished calculating average sentence length for " $(LANGUAGE)
 
 
 # Eval two-stage model
@@ -150,3 +153,8 @@ tune_hyperparameters: $(PROCESSED_DATA_FILE) $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h02_learn/tune_pitman_yor.py --results-file $(RESULTS_DIR_LANG)/hyperparam_tuning_results --no-alphas $(NO_ALPHAS) --no-betas $(NO_BETAS)\
 			--two-stage-state-folder $(CHECKPOINT_DIR_LANG)/hyperparam_tuning --data-file $(PROCESSED_DATA_FILE) --max-train-tokens $(MAX_TRAIN_TOKENS) --generator-path $(CHECKPOINT_TYPE_PATH)
+
+calculate_avg_sentence_len: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
+	mkdir -p $(RESULTS_DIR_LANG)
+	python src/h03_eval/calculate_avg_code_length.py --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --data-file $(PROCESSED_DATA_FILE)
+	python src/h03_eval/calculate_avg_code_length.py --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --data-file $(PROCESSED_DATA_FILE)	

@@ -16,22 +16,26 @@ def get_args():
     argparser = get_argparser()
     # adaptor
     argparser.add_argument('--two-stage-state-folder', type=str, required=True)
+    argparser.add_argument('--results_file', type=str, required=True)
     add_data_args(argparser)
     add_generator_args(argparser)
     args = parse_args(argparser)
     return args
 
 
-def save_pitman_yor_results(model, dataset, alpha, beta, train_loss,\
-                            dev_loss, test_loss, test_size, results_fname):
+def save_results(model, dev_natural_code_avg, dev_permuted_natural_code_avg, dev_two_stage_code_avg,\
+                    test_natural_code_avg, test_permuted_natural_code_avg, test_two_stage_code_avg,\
+                    alphabet_size, dev_sentences, test_sentences, n_tokens, results_fname):
     print('Saving to', results_fname)
     results = []
     file_size = os.path.getsize(results_fname) if os.path.exists(results_fname) else 0
     if file_size == 0:
-        results = [['dataset', 'alphabet_size', 'embedding_size', 'hidden_size', 'nlayers', 'dropout_p',\
-                     'alpha', 'beta', 'train_loss', 'dev_loss', 'test_loss', 'test_size']]
-    results += [[dataset, model.alphabet_size, model.embedding_size, model.hidden_size, model.nlayers,\
-                model.dropout_p, alpha, beta, train_loss, dev_loss, test_loss, test_size]]
+        results = [['model', 'dev_natural_code_avg', 'dev_permuted_natural_code_avg', 'dev_two_stage_code_avg',\
+                    'test_natural_code_avg', 'test_permuted_natural_code_avg', 'test_two_stage_code_avg',\
+                    'alphabet_size', 'dev_sentences', 'test_sentences', 'n_tokens']]
+    results += [[model, dev_natural_code_avg, dev_permuted_natural_code_avg, dev_two_stage_code_avg,\
+                test_natural_code_avg, test_permuted_natural_code_avg, test_two_stage_code_avg,\
+                alphabet_size, dev_sentences, test_sentences, n_tokens]]
     util.write_csv(results_fname, results)
 
 
@@ -127,16 +131,22 @@ def main():
     generator = load_generator(args.two_stage_state_folder)
     adaptor = Adaptor.load(args.two_stage_state_folder)
 
-    natural_code_average = calculate_natural_code_average(dev_sentences)
-    natural_permuted_code_average = calculate_random_code_average(dev_sentences)
-    two_stage_code_average = calculate_two_stage_code_average(dev_sentences, adaptor, generator, alphabet)
+    dev_natural_code_average = calculate_natural_code_average(dev_sentences)
+    dev_natural_permuted_code_average = calculate_random_code_average(dev_sentences)
+    dev_two_stage_code_average = calculate_two_stage_code_average(dev_sentences, adaptor, generator, alphabet)
+
+    test_natural_code_average = calculate_natural_code_average(test_sentences)
+    test_natural_permuted_code_average = calculate_random_code_average(test_sentences)
+    test_two_stage_code_average = calculate_two_stage_code_average(test_sentences, adaptor, generator, alphabet)
 
     print('Natural code average sentence length', natural_code_average)
     print('Natural code average sentence length with permuted lengths', natural_permuted_code_average)
     print('Two-stage code average sentence length', two_stage_code_average)
 
-    #save_pitman_yor_results(generator, args.dataset, alpha, beta, train_loss, dev_loss, test_loss,\
-    #                        len(testloader.dataset), args.adaptor_results_file)
+    save_results(args.two_stage_state_folder, dev_natural_code_average, dev_natural_permuted_code_average,\
+                    dev_two_stage_code_average, test_natural_code_average, test_natural_permuted_code_average,\
+                    test_two_stage_code_average, len(alphabet), len(dev_sentences), len(test_sentences),\
+                    n_tokens, args.results_file)
 
 
 if __name__ == '__main__':
