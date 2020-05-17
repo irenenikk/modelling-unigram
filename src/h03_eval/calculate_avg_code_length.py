@@ -139,9 +139,9 @@ def main():
     test_natural_permuted_code_average = calculate_random_code_average(test_sentences)
     test_two_stage_code_average = calculate_two_stage_code_average(test_sentences, adaptor, generator, alphabet)
 
-    print('Natural code average sentence length', natural_code_average)
-    print('Natural code average sentence length with permuted lengths', natural_permuted_code_average)
-    print('Two-stage code average sentence length', two_stage_code_average)
+    print('Natural code average sentence length in dev:', dev_natural_code_average, 'in test:', test_natural_code_average)
+    print('Natural code average sentence length with permuted lengths in dev:', dev_natural_permuted_code_average, 'in test:', test_natural_permuted_code_average)
+    print('Two-stage code average sentence length in dev:', dev_two_stage_code_average, 'in test:', test_two_stage_code_average)
 
     save_results(args.two_stage_state_folder, dev_natural_code_average, dev_natural_permuted_code_average,\
                     dev_two_stage_code_average, test_natural_code_average, test_natural_permuted_code_average,\
