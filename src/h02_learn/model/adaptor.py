@@ -57,6 +57,7 @@ class Adaptor:
             'alpha': self.alpha,
             'beta': self.beta,
             'save_state': self.save_state,
+            'alphabet': self.alphabet
         }
 
     @staticmethod

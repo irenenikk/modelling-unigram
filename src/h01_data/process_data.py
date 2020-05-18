@@ -23,7 +23,7 @@ def get_args():
         "--n-folds", type=int, default=10,
         help="Number of folds to split data")
     argparser.add_argument(
-        "--max-sentences", type=int, default=4000,
+        "--max-sentences", type=int, default=1000000,
         help="Maximum number of sentences used")
     add_data_args(argparser)
     return parse_args(argparser)
@@ -46,16 +46,18 @@ def get_fold_splits(n_sentences, n_folds, max_sentences=None):
     splits = {x: i for i, fold in enumerate(splits) for x in fold}
     return splits
 
+def is_allowed(word, char_set):
+    #return word.isalpha()
+    return all([char in char_set for char in word.lower()])
+
 def process_line(line, word_info, sentence_list, alphabet, language):
     character_set = get_character_set(language)
     # remove punctuation
     line = line.translate(str.maketrans('', '', string.punctuation))
     sentence = [word.lower() for word in list(filter(None, line.strip().split(' ')))]
     # only accept words without extra symbols
-    is_allowed = all([all([char in character_set
-                           for char in word.lower()])
-                      for word in sentence])
-    if not is_allowed:
+    keep = all([is_allowed(word, character_set) for word in sentence])
+    if not keep:
         return
     sentence_list.append(sentence)
     for word in sentence:
