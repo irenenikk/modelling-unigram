@@ -16,7 +16,10 @@ def get_character_set(language):
         'en': get_latin_base(),
         'fi': get_latin_base() + 'äåöäåöššžž',
         'yo': get_latin_base() + 'àáèéìíòóùúàáèéìíòóùúńńṣṣẹẹọọ',
-        'he': 'אבגדהוזחטיךכלםמןנסעףפץצקרשת'
+        'he': 'אבגדהוזחטיךכלםמןנסעףפץצקרשת',
+        'de': get_latin_base() + 'äöüßäöü',
+        'nl': get_latin_base() + 'áäéëíïóöúüáäéëíïóöúü',
+        'ar': 'ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىي'
     }
     try:
         chars = character_sets[language]

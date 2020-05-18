@@ -134,7 +134,7 @@ def correlation(type_lengths, type_freqs):
     freqs = [type_freqs[k] for k in type_freqs.keys()]
     pearson = stats.pearsonr(lengths, freqs)
     spearman = stats.spearmanr(lengths, freqs)
-    return pearso[0]n, spearman[0]
+    return pearson[0], spearman[0]
 
 
 def calculate_all_correlatios(sentences, adaptor, generator, alphabet, type_freqs):
