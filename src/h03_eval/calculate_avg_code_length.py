@@ -24,31 +24,35 @@ def get_args():
     return args
 
 
-def save_results(model, dev_natural_code_avg, dev_permuted_natural_code_avg, dev_two_stage_code_avg,\
+def save_results(model, dev_natural_code_avg, dev_permuted_natural_avg, dev_two_stage_avg,\
                     natural_correlation, permuted_correlation, two_stage_correlation,\
                     alphabet_size, dev_sentences, test_sentences, results_fname, test):
     print('Saving to', results_fname)
     results = []
     file_size = os.path.getsize(results_fname) if os.path.exists(results_fname) else 0
     if file_size == 0:
-        results = [['model', 'dev_natural_code_avg', 'dev_permuted_natural_code_avg', 'dev_two_stage_code_avg',\
-                    'natural_correlation', 'permuted_correlation', 'two_stage_correlation',\
-                    'alphabet_size', 'dev_sentences', 'test_sentences', 'test']]
-    results += [[model, dev_natural_code_avg, dev_permuted_natural_code_avg, dev_two_stage_code_avg,\
+        results = [['model','dev_natural_code_avg', 'dev_permuted_natural_code_avg',\
+                    'dev_two_stage_code_avg', 'natural_correlation', 'permuted_correlation',\
+                    'two_stage_correlation', 'alphabet_size', 'dev_sentences',\
+                    'test_sentences', 'test']]
+    results += [[model, dev_natural_code_avg, dev_permuted_natural_avg, dev_two_stage_avg,\
                 natural_correlation, permuted_correlation, two_stage_correlation,\
                 alphabet_size, dev_sentences, test_sentences, test]]
     util.write_csv(results_fname, results)
 
 
 def average_sentence_length(sentences, type_lengths):
-    lengths = [type_lengths[word] for sentence in sentences for word in sentence]
+    lengths = []
+    for sentence in sentences:
+        word_lengths = sum([type_lengths[word] for word in sentence])
+        whitespace_length = len(sentences) - 1
+        lengths.append(word_lengths + whitespace_length)
     return np.mean(lengths), np.std(lengths)
 
 
 def calculate_word_lengths_under_code(sentences, type_logprobs, alphabet_size):
     type_lengths = {}
     for sentence in sentences:
-        sentence_length = 0
         for word in sentence:
             if word in type_lengths:
                 continue
@@ -161,29 +165,35 @@ def main():
     generator = load_generator(args.two_stage_state_folder)
     adaptor = Adaptor.load(args.two_stage_state_folder)
 
-    dev_natural_code_average = calculate_natural_code_average(dev_sentences)
-    dev_natural_permuted_code_average = calculate_random_code_average(dev_sentences)
-    dev_two_stage_code_average = calculate_two_stage_code_average(dev_sentences, adaptor, generator, alphabet)
+    dev_natural_avg = \
+        calculate_natural_code_average(dev_sentences)
+    dev_natural_perm_avg = \
+        calculate_random_code_average(dev_sentences)
+    dev_two_stage_avg = \
+        calculate_two_stage_code_average(dev_sentences, adaptor, generator, alphabet)
 
-    test_natural_code_average = calculate_natural_code_average(test_sentences)
-    test_natural_permuted_code_average = calculate_random_code_average(test_sentences)
-    test_two_stage_code_average = calculate_two_stage_code_average(test_sentences, adaptor, generator, alphabet)
+    test_natural_avg = calculate_natural_code_average(test_sentences)
+    test_natural_perm_avg = calculate_random_code_average(test_sentences)
+    test_two_stage_avg = calculate_two_stage_code_average(test_sentences, adaptor, generator, alphabet)
 
-    dev_natural_correlation, dev_permuted_correlation, dev_two_stage_correlation = \
+    dev_natural_corr, dev_permuted_corr, dev_two_stage_corr = \
         calculate_all_correlatios(dev_sentences, adaptor, generator, alphabet, dict(dev_loader.dataset.word_freqs))
-    test_natural_correlation, test_permuted_correlation, test_two_stage_correlation = \
+    test_natural_corr, test_permuted_corr, test_two_stage_corr = \
         calculate_all_correlatios(test_sentences, adaptor, generator, alphabet, dict(test_loader.dataset.word_freqs))
 
-    print('Natural code average sentence length in dev:', dev_natural_code_average, 'in test:', test_natural_code_average)
-    print('Natural code average sentence length with permuted lengths in dev:', dev_natural_permuted_code_average, 'in test:', test_natural_permuted_code_average)
-    print('Two-stage code average sentence length in dev:', dev_two_stage_code_average, 'in test:', test_two_stage_code_average)
+    print('Natural code average sentence length in dev:', dev_natural_avg,
+         'in test:', test_natural_avg)
+    print('Natural code average sentence length with permuted lengths in dev:', dev_natural_perm_avg,
+         'in test:', test_natural_perm_avg)
+    print('Two-stage code average sentence length in dev:', dev_two_stage_avg,
+         'in test:', test_two_stage_avg)
 
-    save_results(args.two_stage_state_folder, dev_natural_code_average, dev_natural_permuted_code_average,\
-                    dev_two_stage_code_average, dev_natural_correlation, dev_permuted_correlation, dev_two_stage_correlation,
-                    len(alphabet), len(dev_sentences), len(test_sentences), args.results_file, test=False)
-    save_results(args.two_stage_state_folder, test_natural_code_average, test_natural_permuted_code_average,\
-                    test_two_stage_code_average, test_natural_correlation, test_permuted_correlation, test_two_stage_correlation,
-                    len(alphabet), len(dev_sentences), len(test_sentences), args.results_file, test=True)
+    save_results(args.two_stage_state_folder, dev_natural_avg, dev_natural_perm_avg,\
+                dev_two_stage_avg, dev_natural_corr, dev_permuted_corr, dev_two_stage_corr,
+                len(alphabet), len(dev_sentences), len(test_sentences), args.results_file, test=False)
+    save_results(args.two_stage_state_folder, test_natural_avg, test_natural_permuted_avg,\
+                test_two_stage_avg, test_natural_corr, test_permuted_corr, test_two_stage_corr,
+                len(alphabet), len(dev_sentences), len(test_sentences), args.results_file, test=True)
 
 
 if __name__ == '__main__':
