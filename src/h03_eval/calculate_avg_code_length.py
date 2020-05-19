@@ -191,7 +191,7 @@ def main():
     save_results(args.two_stage_state_folder, dev_natural_avg, dev_natural_perm_avg,\
                 dev_two_stage_avg, dev_natural_corr, dev_permuted_corr, dev_two_stage_corr,
                 len(alphabet), len(dev_sentences), len(test_sentences), args.results_file, test=False)
-    save_results(args.two_stage_state_folder, test_natural_avg, test_natural_permuted_avg,\
+    save_results(args.two_stage_state_folder, test_natural_avg, test_natural_perm_avg,\
                 test_two_stage_avg, test_natural_corr, test_permuted_corr, test_two_stage_corr,
                 len(alphabet), len(dev_sentences), len(test_sentences), args.results_file, test=True)
 

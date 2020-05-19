@@ -71,7 +71,7 @@ def main():
     print('Train size: %d Dev size %d' %
           (len(trainloader.dataset), len(devloader.dataset)))
 
-    beta_end = len(trainloader.dataset) * 10
+    beta_end = len(trainloader.dataset) * 3
     if args.beta_end is not None:
         beta_end = args.beta_end
     alphas = np.arange(0, 1, float(1)/args.no_alphas)
