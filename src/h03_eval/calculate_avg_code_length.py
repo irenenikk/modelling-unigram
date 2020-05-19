@@ -24,20 +24,20 @@ def get_args():
     return args
 
 
-def save_results(model, dev_natural_code_avg, dev_permuted_natural_avg, dev_two_stage_avg,\
+def save_results(model, atural_code_avg, permuted_natural_avg, two_stage_avg,\
                     natural_correlation, permuted_correlation, two_stage_correlation,\
-                    alphabet_size, dev_sentences, test_sentences, results_fname, test):
+                    alphabet_size, sentences, test_sentences, results_fname, test):
     print('Saving to', results_fname)
     results = []
     file_size = os.path.getsize(results_fname) if os.path.exists(results_fname) else 0
     if file_size == 0:
-        results = [['model','dev_natural_code_avg', 'dev_permuted_natural_code_avg',\
-                    'dev_two_stage_code_avg', 'natural_correlation', 'permuted_correlation',\
-                    'two_stage_correlation', 'alphabet_size', 'dev_sentences',\
+        results = [['model','natural_code_avg', 'permuted_natural_code_avg',\
+                    'two_stage_code_avg', 'natural_correlation', 'permuted_correlation',\
+                    'two_stage_correlation', 'alphabet_size', 'sentences',\
                     'test_sentences', 'test']]
-    results += [[model, dev_natural_code_avg, dev_permuted_natural_avg, dev_two_stage_avg,\
+    results += [[model, atural_code_avg, permuted_natural_avg, two_stage_avg,\
                 natural_correlation, permuted_correlation, two_stage_correlation,\
-                alphabet_size, dev_sentences, test_sentences, test]]
+                alphabet_size, sentences, test_sentences, test]]
     util.write_csv(results_fname, results)
 
 
@@ -45,7 +45,7 @@ def average_sentence_length(sentences, type_lengths):
     lengths = []
     for sentence in sentences:
         word_lengths = sum([type_lengths[word] for word in sentence])
-        whitespace_length = len(sentences) - 1
+        whitespace_length = len(sentence) - 1
         lengths.append(word_lengths + whitespace_length)
     return np.mean(lengths), np.std(lengths)
 
