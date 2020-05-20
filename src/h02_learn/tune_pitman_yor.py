@@ -14,7 +14,7 @@ def get_args():
     # Save
     argparser.add_argument('--results-file', type=str, required=True)
     # adaptor
-    argparser.add_argument('--no-iterations', type=int, required=True)
+    argparser.add_argument('--no-iterations', type=int, default=10)
     argparser.add_argument('--beta-limit', type=int)
     argparser.add_argument('--adaptor-iterations', type=int, default=6)
     argparser.add_argument('--two-stage-state-folder', type=str, required=True)
