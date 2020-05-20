@@ -4,8 +4,6 @@ BETA := 1
 MAX_TRAIN_TOKENS := 700000
 DATA_DIR_BASE := ./data
 # used in hyperparameter tuning
-NO_BETAS = 10
-NO_ALPHAS = 10
 EPOCHS = 5
 DATA_DIR_LANG := $(DATA_DIR_BASE)/$(LANGUAGE)
 WIKI_DIR := $(DATA_DIR_LANG)/wiki
@@ -151,8 +149,8 @@ $(XML_FILE):
 tune_hyperparameters: $(PROCESSED_DATA_FILE) $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_DIR_LANG)/hyperparam_tuning
 	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h02_learn/tune_pitman_yor.py --results-file $(RESULTS_DIR_LANG)/hyperparam_tuning_results --no-alphas $(NO_ALPHAS) --no-betas $(NO_BETAS)\
-			--two-stage-state-folder $(CHECKPOINT_DIR_LANG)/hyperparam_tuning --data-file $(PROCESSED_DATA_FILE) --max-train-tokens $(MAX_TRAIN_TOKENS) --generator-path $(CHECKPOINT_TYPE_PATH)
+	python src/h02_learn/tune_pitman_yor.py --results-file $(RESULTS_DIR_LANG)/hyperparam_tuning_results --two-stage-state-folder $(CHECKPOINT_DIR_LANG)/hyperparam_tuning \
+			--data-file $(PROCESSED_DATA_FILE) --max-train-tokens $(MAX_TRAIN_TOKENS) --generator-path $(CHECKPOINT_TYPE_PATH)
 
 calculate_avg_sentence_len: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
