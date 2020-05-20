@@ -150,7 +150,7 @@ $(XML_FILE):
 tune_hyperparameters: $(PROCESSED_DATA_FILE) $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_DIR_LANG)/hyperparam_tuning
 	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h02_learn/tune_pitman_yor.py --results-file $(RESULTS_DIR_LANG)/hyperparam_tuning_results --two-stage-state-folder $(CHECKPOINT_DIR_LANG)/hyperparam_tuning \
+	python -u src/h02_learn/tune_pitman_yor.py --results-file $(RESULTS_DIR_LANG)/hyperparam_tuning_results --two-stage-state-folder $(CHECKPOINT_DIR_LANG)/hyperparam_tuning \
 			--data-file $(PROCESSED_DATA_FILE) --max-train-tokens $(MAX_TRAIN_TOKENS) --generator-path $(CHECKPOINT_TYPE_PATH) --no-iterations $(TUNING_ITERATIONS)
 
 calculate_avg_sentence_len: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)

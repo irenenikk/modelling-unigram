@@ -45,6 +45,7 @@ def tune_alpha_and_beta(trainloader, devloader, alphabet, args, iterations, beta
         generator = load_generator(args.generator_path)
         adaptor = Adaptor(alpha, beta, alphabet, '', save_state=False)
         print('--------------------------------')
+        print('alpha =', alpha, 'beta = ', beta)
         dev_loss = \
             train_two_stage_model(generator, adaptor, trainloader, devloader, \
                                     alphabet, type_trainloader, args)
