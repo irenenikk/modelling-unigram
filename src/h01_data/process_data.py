@@ -56,6 +56,8 @@ def process_line(line, word_info, sentence_list, alphabet, language):
     line = line.translate(str.maketrans('', '', string.punctuation))
     sentence = [word.lower() for word in list(filter(None, line.strip().split(' ')))]
     # only accept words without extra symbols
+    if sentence = []:
+        return
     keep = all([is_allowed(word, character_set) for word in sentence])
     if not keep:
         return

@@ -26,6 +26,9 @@ CHECKPOINT_TYPE_PATH := $(CHECKPOINT_DIR_LANG)/types_$(MAX_TRAIN_TOKENS)
 CHECKPOINT_TYPE_FILE := $(CHECKPOINT_TYPE_PATH)/model.tch
 CHECKPOINT_TOKEN_PATH := $(CHECKPOINT_DIR_LANG)/tokens_$(MAX_TRAIN_TOKENS)
 CHECKPOINT_TOKEN_FILE := $(CHECKPOINT_TOKEN_PATH)/model.tch
+CHECKPOINT_SENTENCE_PATH := $(CHECKPOINT_DIR_LANG)/sentences_$(MAX_TRAIN_TOKENS)
+CHECKPOINT_SENTENCE_FILE := $(CHECKPOINT_SENTENCE_PATH)/model.tch
+
 DOT:= .
 UNDERSCORE:= _
 STRING_ALPHA = $(subst $(DOT),$(UNDERSCORE),$(ALPHA))
@@ -54,7 +57,7 @@ eval_generator: $(GENERATOR_RESULTS_FILE)
 eval_two_stage: run_two_stage_token_evaluation run_two_stage_type_evaluation
 	echo "Finished evaluating two-stage model" $(LANGUAGE)
 
-train_generator: $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
+train_generator: $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE) $(CHECKPOINT_SENTENCES_FILE)
 	echo "Finished training model" $(LANGUAGE)
 
 get_wiki: $(PROCESSED_DATA_FILE)
@@ -125,6 +128,11 @@ $(CHECKPOINT_TYPE_FILE): $(PROCESSED_DATA_FILE)
 	echo "Train types model" $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(CHECKPOINT_TYPE_PATH)
 	python src/h02_learn/train_generator.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset types --max-train-tokens $(MAX_TRAIN_TOKENS)
+
+$(CHECKPOINT_SENTENCE_FILE): $(PROCESSED_DATA_FILE)
+	echo "Train sentence model" $(CHECKPOINT_SENTENCE_FILE)
+	mkdir -p $(CHECKPOINT_SENTENCE_PATH)
+	python src/h02_learn/train_generator.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_SENTENCE_PATH) --dataset sentences --max-train-tokens $(MAX_TRAIN_TOKENS)
 
 # Preprocess Data
 $(PROCESSED_DATA_FILE): $(TOKENIZED_FILE)
