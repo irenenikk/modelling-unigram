@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import Dataset
 import numpy as np
 
-from h02_learn.dataset.base import get_folds_data, get_word_idx
+#from h02_learn.dataset.base import  get_word_idx
 #from h02_learn.dataset.tokens import build_token_list
 
 
@@ -25,7 +25,7 @@ class SentenceDataset(Dataset):
         self.alphabet.add_word(' ')
         all_sentences = [sent
                       for fold in self.folds
-                      for sent in sentence_data[fold].items()]
+                      for sent in sentence_data[fold]]
 
         sentences = []
         if self.max_tokens is None:
@@ -35,6 +35,8 @@ class SentenceDataset(Dataset):
         i = 0
         while (n_tokens < self.max_tokens):
             sentence = all_sentences[i]
+            if sentence == []:
+                continue
             sentences.append(sentence)
             n_tokens += len(sentence)
             i += 1
@@ -42,12 +44,19 @@ class SentenceDataset(Dataset):
         return sentences
 
     def __len__(self):
-        return len(sentences)
+        return len(self.sentences)
 
     def __getitem__(self, index):
         sentence = self.sentences[index]
-        indices = torch.LongTesor([self.alphabet.word2idx('SOS')])
-        indices += torch.LongTesor([self.alphabet.word2idx(word) + self.alphabet.word2idx(' ')
-                   for word in sentence])
-        indices[-1] = torch.LongTesor(self.alphabet.word2idx('EOS'))
-        return (indices, torch.Tensor(1), index, '')
+        indices = [self.alphabet.char2idx('SOS')]
+        indice_list = [self.alphabet.word2idx(word.lower()) + self.alphabet.word2idx(' ') for word in sentence]
+        indices += [index for word in indice_list for index in word]
+        indices[-1] = self.alphabet.char2idx('EOS')
+        return (torch.LongTensor(indices), torch.Tensor(1), index, '')
+
+    def train(self):
+        pass
+
+    def eval(self):
+        pass
+
