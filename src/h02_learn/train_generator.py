@@ -41,7 +41,7 @@ def train_batch(x, y, model, optimizer, by_character=False):
         word_lengths = (y != 0).sum(-1)
         loss = (loss / word_lengths).mean()
     else:
-        loss = loss_per_word.mean()
+        loss = loss.mean()
     loss.backward()
     optimizer.step()
     return loss.item()

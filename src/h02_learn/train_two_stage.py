@@ -65,7 +65,7 @@ def train_generator(generator, tables_with_word_labels, token_devloader, args, a
     table_label_dataloader = get_data_loader(tables_with_word_labels_dataset,\
                                                 args.batch_size)
     _, generator_dev_loss = train(table_label_dataloader, token_devloader, generator,
-                                  args.eval_batches, args.wait_iterations)
+                                  args.eval_batches, args.wait_iterations, args.dataset)
     generator.save(args.two_stage_state_folder)
     print('Generator dev loss', generator_dev_loss)
 

@@ -36,6 +36,7 @@ class SentenceDataset(Dataset):
         while (n_tokens < self.max_tokens):
             sentence = all_sentences[i]
             if sentence == []:
+                i += 1
                 continue
             sentences.append(sentence)
             n_tokens += len(sentence)
@@ -52,7 +53,7 @@ class SentenceDataset(Dataset):
         indice_list = [self.alphabet.word2idx(word.lower()) + self.alphabet.word2idx(' ') for word in sentence]
         indices += [index for word in indice_list for index in word]
         indices[-1] = self.alphabet.char2idx('EOS')
-        return (torch.LongTensor(indices), torch.Tensor(1), index, '')
+        return (torch.LongTensor(indices), torch.Tensor([1]), index, '')
 
     def train(self):
         pass
