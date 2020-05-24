@@ -51,13 +51,13 @@ all: get_wiki train_generator train_two_stage eval_generator eval_two_stage calc
 train_two_stage: run_two_stage_type_training run_two_stage_token_training
 	echo "Finished training two-stage model" $(LANGUAGE)
 
-eval_generator: $(GENERATOR_RESULTS_FILE)
+eval_generator: evaluate_generator
 	echo "Finished evaluating generator" $(LANGUAGE)
 
 eval_two_stage: run_two_stage_token_evaluation run_two_stage_type_evaluation
 	echo "Finished evaluating two-stage model" $(LANGUAGE)
 
-train_generator: $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE) $(CHECKPOINT_SENTENCES_FILE)
+train_generator: $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE) #$(CHECKPOINT_SENTENCES_FILE)
 	echo "Finished training model" $(LANGUAGE)
 
 get_wiki: $(PROCESSED_DATA_FILE)
@@ -112,7 +112,7 @@ run_two_stage_token_training: $(CHECKPOINT_TOKEN_FILE)
 			--alpha $(ALPHA) --beta $(BETA) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --max-train-tokens $(MAX_TRAIN_TOKENS) --epochs $(EPOCHS)
 
 # Eval language models
-$(GENERATOR_RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
+evaluate_generator: $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
 	echo "Eval models" $(GENERATOR_RESULTS_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h03_eval/eval_generator.py --data-file $(PROCESSED_DATA_FILE) --eval-path $(CHECKPOINT_DIR_LANG) --results-file $(GENERATOR_RESULTS_FILE) --batch-size 64 --dataset tokens
