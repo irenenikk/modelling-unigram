@@ -48,14 +48,15 @@ def tune_alpha_and_beta(trainloader, devloader, alphabet, args, iterations, beta
         print('alpha =', alpha, 'beta = ', beta)
         dev_loss = \
             train_two_stage_model(generator, adaptor, trainloader, devloader, \
-                                    alphabet, type_trainloader, args)
+                                    alphabet, type_trainloader, args, save_state=False)
         print('Adaptor dev loss', dev_loss, 'with a =', alpha, ', b =', beta)
         if dev_loss < best_loss:
             print('New best loss')
             best_loss = dev_loss
             best_params = (alpha, beta)
-            print('Saving adaptor state to', args.two_stage_state_folder)
+            print('Saving adaptor and generator state to', args.two_stage_state_folder)
             adaptor.save_fitted_state(args.two_stage_state_folder)
+            generator.save(args.two_stage_state_folder)
         train_loss = evaluate_adaptor(trainloader, generator, adaptor)
         tuning_results += \
             construct_pitman_yor_tuning_results(generator, alpha, beta, train_loss, dev_loss)
