@@ -33,7 +33,7 @@ def get_word_ranks(dataset):
     sorted_freqs = get_sorted_freqs(dataset)
     ranks = {}
     for i, word_freq in enumerate(sorted_freqs):
-        freqs[word_freq[0]] = i
+        ranks[word_freq[0]] = i
     return ranks
 
 def get_ranks_and_freqs(dataset):

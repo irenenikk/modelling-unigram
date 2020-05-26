@@ -2,6 +2,7 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
+from tqdm import tqdm
 
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds
@@ -11,7 +12,7 @@ from h02_learn.model.adaptor import Adaptor
 from h03_eval.eval_generator import load_model
 from util.argparser import get_argparser, parse_args
 from util import util
-from .zipfs_law import calculate_word_freqs, get_word_ranks
+from visualisations.zipfs_law import calculate_word_freqs, get_word_ranks
 
 def get_args():
     argparser = get_argparser()
@@ -25,13 +26,12 @@ def get_args():
 
 
 def get_model(model_name, args):
-    model_path = os.path.join(args.checkpoint_language_dir, model_name + '_' + args.max_train_tokens)
+    model_path = os.path.join(args.checkpoint_language_dir, model_name + '_' + str(args.max_train_tokens))
     model = load_model(model_path)
     return model
 
 
-def get_lm_loss(model_name, x, y, args):
-    model = get_model(model_name, args)
+def get_lm_loss(model, x, y, args):
     y_hat = model(x)
     loss = model.get_loss(y_hat, y).sum(-1)
     return loss.item()
@@ -63,10 +63,14 @@ def main():
     word_freqs = calculate_word_freqs(token_testloader.dataset)
     word_ranks = get_word_ranks(token_testloader.dataset)
 
+    token_model = get_model('tokens', args)
+    type_model = get_model('types', args)
+
     results = ['type_loss', 'token_loss', 'two_stage_entr', 'freq', 'rank']
-    for x, y, _, _, word in type_testloader:
-        type_loss = get_lm_loss('types', x, y, args)
-        token_loss = get_lm_loss('tokens', x, y, args)
+    for x, y, _, _, word_batch in tqdm(type_testloader, desc='Calculating type entropies', total=len(type_testloader.dataset)):
+        word = word_batch[0]
+        type_loss = get_lm_loss(type_model, x, y, args)
+        token_loss = get_lm_loss(token_model, x, y, args)
         two_stage_loss = get_two_stage_loss(adaptor, generator, x, y, word)
         freq = word_freqs[word]
         rank = word_ranks[word]
