@@ -57,8 +57,8 @@ def main():
         'tokens', data_file, folds,
         batch_size=1, max_train_tokens=args.max_train_tokens, test=True)
 
-    two_stage_state_folder = os.path.join(args.checkpoint_language_dir, 'two_stage_init_type_'
-                                         args.alpha.replace('.', '_'), '_', args.beta, '_', str(args.max_train_tokens))
+    two_stage_state_folder = os.path.join(args.checkpoint_language_dir, 'two_stage_init_type_' +
+                                         args.alpha.replace('.', '_') + '_' + args.beta + '_' + str(args.max_train_tokens))
     generator = load_generator(two_stage_state_folder)
     generator.eval()
     adaptor = Adaptor.load(two_stage_state_folder)
