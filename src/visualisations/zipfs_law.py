@@ -49,6 +49,9 @@ def get_args():
 
 def main():
     args = get_args()
+    sns.set_palette("muted")
+    sns.set_context("notebook", font_scale=1.5)    
+    plt.rc('font', family='serif', serif='Times New Roman')
     langs = ['fi', 'yo', 'he', 'id', 'en', 'ta', 'tr']
     for lang in langs:
         print('Getting data for', lang)
@@ -61,10 +64,9 @@ def main():
         plt.plot(ranks, freqs, label=lang)
         plt.yscale('log')
         plt.xscale('log')
-    plt.title('Zip\'s law in the Wikipedia corpus')
     plt.xlabel('Word rank')
     plt.ylabel('Word frequency')
-    plt.legend(loc="upper right", prop={'size': 13})
+    plt.legend(loc="upper right")
     plt.show()
 
 if __name__ == '__main__':

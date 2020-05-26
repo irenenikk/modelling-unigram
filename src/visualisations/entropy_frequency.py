@@ -69,15 +69,16 @@ def main():
     token_model = get_model('tokens', args)
     type_model = get_model('types', args)
 
-    results = [['word', 'type_loss', 'token_loss', 'two_stage_entr', 'freq', 'rank']]
+    results = [['word', 'type', 'token', 'two_stage', 'generator', 'freq', 'rank']]
     for x, y, _, _, word_batch in tqdm(type_testloader, desc='Calculating type entropies', total=len(type_testloader.dataset)):
         word = word_batch[0]
         type_loss = get_lm_loss(type_model, x, y, args)
         token_loss = get_lm_loss(token_model, x, y, args)
+        generator_loss = get_lm_loss(generator, x, y, args)
         two_stage_loss = get_two_stage_loss(adaptor, generator, x, y, word)
         freq = word_freqs[word]
         rank = word_ranks[word]
-        results += [[word, type_loss, token_loss, two_stage_loss, freq, rank]]
+        results += [[word, type_loss, token_loss, two_stage_loss, generator_loss, freq, rank]]
 
     lang = args.data_language_dir.split('/')[-1]
     results_file = os.path.join(args.results_folder, 'entropy_freq_', lang)
