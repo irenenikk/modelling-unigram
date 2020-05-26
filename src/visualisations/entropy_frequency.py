@@ -19,8 +19,9 @@ def get_args():
     argparser.add_argument('--max-train-tokens', type=int, required=True)
     argparser.add_argument('--data-language-dir', type=str, required=True)
     argparser.add_argument('--checkpoint-language-dir', type=str, required=True)
-    argparser.add_argument('--two-stage-state-folder', type=str, required=True)
-    argparser.add_argument('--results-file', type=str, required=True)
+    argparser.add_argument('--alpha', type=str, required=True)
+    argparser.add_argument('--beta', type=str, required=True)
+    argparser.add_argument('--results-folder', type=str, required=True)
     args = parse_args(argparser)
     return args
 
@@ -56,9 +57,11 @@ def main():
         'tokens', data_file, folds,
         batch_size=1, max_train_tokens=args.max_train_tokens, test=True)
 
-    generator = load_generator(args.two_stage_state_folder)
+    two_stage_state_folder = os.path.join(args.checkpoint_language_dir, 'two_stage_init_type_'
+                                         args.alpha.replace('.', '_'), '_', args.beta, '_', str(args.max_train_tokens))
+    generator = load_generator(two_stage_state_folder)
     generator.eval()
-    adaptor = Adaptor.load(args.two_stage_state_folder)
+    adaptor = Adaptor.load(two_stage_state_folder)
 
     word_freqs = calculate_word_freqs(token_testloader.dataset)
     word_ranks = get_word_ranks(token_testloader.dataset)
@@ -76,7 +79,9 @@ def main():
         rank = word_ranks[word]
         results += [[type_loss, token_loss, two_stage_loss, freq, rank]]
 
-    util.overwrite_csv(args.results_file, results)
+    lang = args.data_language_dir.split('/')[-1]
+    results_file = os.path.join(args.results_folder, 'entropy_freq_', lang)
+    util.overwrite_csv(results_file, results)
 
 if __name__ == '__main__':
     main()
