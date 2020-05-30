@@ -72,6 +72,9 @@ tune_hyperparams: tune_hyperparameters
 calculate_average_sentence_length: calculate_avg_sentence_len
 	echo "Finished calculating average sentence length for " $(LANGUAGE)
 
+calculate_surprisal: calculate_surprisals
+	echo "Finished calculating surprisals for" $(LANGUAGE)
+
 
 # Eval two-stage model
 run_two_stage_type_evaluation: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
@@ -165,3 +168,8 @@ calculate_avg_sentence_len: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE
 	mkdir -p $(RESULTS_DIR_LANG)
 	python src/h03_eval/calculate_avg_code_length.py --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --data-file $(PROCESSED_DATA_FILE) --results-file $(RESULTS_DIR_LANG)/average_sentence_lengths.csv
 	python src/h03_eval/calculate_avg_code_length.py --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --data-file $(PROCESSED_DATA_FILE) --results-file $(RESULTS_DIR_LANG)/average_sentence_lengths.csv
+
+calculate_surprisals: $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
+	mkdir -p $(RESULTS_DIR_LANG)
+	python src/visualisations/entropy_frequency.py --max-train-tokens $(MAX_TRAIN_TOKENS) --data-language-dir $(DATA_DIR_LANG) --checkpoint-language-dir $(CHECKPOINT_DIR_LANG)\
+			--alpha $(ALPHA) --beta $(BETA) --results-folder $(RESULTS_DIR_LANG)

@@ -81,7 +81,7 @@ def main():
         results += [[word, type_loss, token_loss, two_stage_loss, generator_loss, freq, rank]]
 
     lang = args.data_language_dir.split('/')[-1]
-    results_file = os.path.join(args.results_folder, 'entropy_freq_', lang)
+    results_file = os.path.join(args.results_folder, 'entropy_freq_', lang, '.csv')
     util.overwrite_csv(results_file, results)
 
 if __name__ == '__main__':
