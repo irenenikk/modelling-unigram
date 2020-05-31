@@ -7,7 +7,7 @@ from tqdm import tqdm
 sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.dataset.tokens import TokenDataset
-from h02_learn.train_generator import load_generator
+from h02_learn.train_generator import load_generator, evaluate
 from h02_learn.model.adaptor import Adaptor
 from h03_eval.eval_generator import load_model
 from util.argparser import get_argparser, parse_args
@@ -80,8 +80,14 @@ def main():
         rank = word_ranks[word]
         results += [[word, type_loss, token_loss, two_stage_loss, generator_loss, freq, rank]]
 
+    overall_type  = evaluate(type_testloader, 'types')
+    overall_token  = evaluate(type_testloader, 'tokens')
+
+    print('Overall type loss', overall_type)
+    print('Overall token loss', overall_token)
+
     lang = args.data_language_dir.split('/')[-1]
-    results_file = os.path.join(args.results_folder, 'entropy_freq_', lang, '.csv')
+    results_file = os.path.join(args.results_folder, 'entropy_freq.csv')
     util.overwrite_csv(results_file, results)
 
 if __name__ == '__main__':
