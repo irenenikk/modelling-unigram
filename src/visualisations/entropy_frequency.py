@@ -80,8 +80,8 @@ def main():
         rank = word_ranks[word]
         results += [[word, type_loss, token_loss, two_stage_loss, generator_loss, freq, rank]]
 
-    overall_type  = evaluate(type_testloader, 'types')
-    overall_token  = evaluate(type_testloader, 'tokens')
+    overall_type  = evaluate(type_testloader, type_model)
+    overall_token  = evaluate(type_testloader, token_model)
 
     print('Overall type loss', overall_type)
     print('Overall token loss', overall_token)
