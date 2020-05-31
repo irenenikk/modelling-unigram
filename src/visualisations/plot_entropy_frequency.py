@@ -87,9 +87,22 @@ def plot_data(x_axis, sorted_data, transform, x_label, scatter=True):
     plt.tight_layout()
     plt.xlabel(x_label)
     plt.ylabel('Word surprisal (nats)')
-    plt.ylim(4, 25)
+    #plt.ylim(4, 25)
     plt.legend()
     plt.show()
+
+def compare_type_and_generator(data):
+    print('Singletons with the biggest diff between gen and type')
+    data['type_minus_gen'] = data['type'] - data['generator'
+    gen_best = data.sort_values(by=['type_minus_gen'], ascending=False)
+    gen_better = gen_best[gen_best['type_minus_gen'] > 0]
+    gen_better_singletons = gen_best[gen_best['freq'] == 1]
+    print(gen_better_singletons[:10][['word', 'freq', 'type', 'generator'])
+
+    type_better = gen_best[gen_best['type_minus_gen'] < 0]
+    type_better_singletons = type_better[type_better['freq'] == 1]
+    print(type_better_singletons[-10:][['word', 'freq', 'type', 'generator']])
+
 
 def main():
     args = get_args()
@@ -102,13 +115,20 @@ def main():
     rank_sorted = data.sort_values(by=['rank'])
     freq_sorted = data.sort_values(by=['freq'])
 
-    plot_data(rank_sorted['rank']/2, rank_sorted, get_cumulative_average, 'Word rank', scatter=False)
-    plot_data(rank_sorted['rank'].iloc[999:] - 500, rank_sorted, get_window_average, 'Word rank', scatter=False)
-    plot_data(freq_sorted['freq'].unique()-3, freq_sorted, get_average_per_freq, 'Word frequency')
+    #plot_data(rank_sorted['rank']/2, rank_sorted, get_cumulative_average, 'Word rank', scatter=False)
+    #plot_data(rank_sorted['rank'].iloc[999:] - 500, rank_sorted, get_window_average, 'Word rank', scatter=False)
+    plot_data(freq_sorted['freq'].unique()-3, freq_sorted, get_average_per_freq, 'Word frequency', scatter=False)
+    plot_data(freq_sorted['freq'].unique(), freq_sorted, get_average_per_freq2, 'Word frequency', scatter=False)
     #plot_original_data(sorted_data, x_axis_val)
     #plot_average_entropy_sns(data, True)
     #plot_average_entropy_sns_lm(data, False)
     #plot_average_entropy_sns(data, False)
+
+    print('test types', len(data))
+    print('generator mean', data['generator'].mean())
+    print('token mean', data['token'].mean())
+    print('type mean', data['type'].mean())
+    print('two-stage mean', data['two_stage'].mean())
 
 if __name__ == '__main__':
     main()

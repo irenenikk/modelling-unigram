@@ -50,7 +50,7 @@ def get_args():
 def main():
     args = get_args()
     sns.set_palette("muted")
-    sns.set_context("notebook", font_scale=1.5)    
+    sns.set_context("notebook", font_scale=1.6)
     plt.rc('font', family='serif', serif='Times New Roman')
     langs = ['fi', 'yo', 'he', 'id', 'en', 'ta', 'tr']
     for lang in langs:
@@ -67,6 +67,7 @@ def main():
     plt.xlabel('Word rank')
     plt.ylabel('Word frequency')
     plt.legend(loc="upper right")
+    plt.tight_layout()
     plt.show()
 
 if __name__ == '__main__':
