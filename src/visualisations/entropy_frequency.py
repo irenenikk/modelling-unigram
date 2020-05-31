@@ -29,6 +29,7 @@ def get_args():
 def get_model(model_name, args):
     model_path = os.path.join(args.checkpoint_language_dir, model_name + '_' + str(args.max_train_tokens))
     model = load_model(model_path)
+    model.eval()
     return model
 
 
@@ -55,7 +56,7 @@ def main():
         batch_size=1, test=True)
     _, _, token_testloader, _ = get_data_loaders_with_folds(
         'tokens', data_file, folds,
-        batch_size=1, max_train_tokens=args.max_train_tokens, test=True)
+        batch_size=1, test=True)
 
     two_stage_state_folder = os.path.join(args.checkpoint_language_dir, 'two_stage_init_type_' +
                                          args.alpha.replace('.', '_') + '_' + args.beta + '_' + str(args.max_train_tokens))
