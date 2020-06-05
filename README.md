@@ -27,6 +27,12 @@ In order to run the full experiments pipeline for a given language, run
 make all LANGUAGE=<wikipedia language code> MAX_TRAIN_TOKENS=<the amount of tokens to use in training>
 ```
 
+In order to change the hyperparameters of the two-stage model, define `ALPHA` and `BETA`.
+
+You can see the individual steps of the experiments in the `Makefile`, but `all` will download the data (if it has not been downloaded already) and train the type and token models (if they have not been trained), retrain a two-stage model with the given hyperparameters, evaluate all models, and calculate type entropies as well as expected code lengths.
+
+The results are stored under their own folder for each language in `results` by default.
+
 You can also run the components of the experiments individually:
 
 `get_wiki`: Download and preprocess wikipedia data.
@@ -38,6 +44,12 @@ You can also run the components of the experiments individually:
 `eval_generator`: Evaluate the different initialisations of the generator language model.
 
 `eval_two_stage`: Evaluate the different initialisations of the two-stage model.
+
+`calculate_suprisal`: Calculate the surprisal for individual types in the test set.
+
+`calculate_average_sentence_length`: Calculate the average sentence lenghts under different models.
+
+`tune_hyperparams`: Tune the hyperparameters for a given language. You can specify the amount of parameters tested with `TUNING_ITERATIONS` (the default is 10).
 
 In evaluation the models are evaluated both using types and tokens.
 
