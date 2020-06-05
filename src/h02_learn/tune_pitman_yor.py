@@ -2,30 +2,24 @@ import sys
 import numpy as np
 
 sys.path.append('./src/')
-from h02_learn.dataset import get_data_loaders_with_folds
+from h02_learn.dataset import get_data_loaders_with_folds, get_data_loader
 from h02_learn.train_two_stage import train_two_stage_model, load_generator, Adaptor
+from h02_learn.dataset.types_from_tokens import TypesFromTokensDataset
 from h03_eval.eval_two_stage import evaluate_adaptor
-from util.argparser import get_argparser, parse_args
+from util.argparser import get_argparser, parse_args, add_all_defaults
 from util import util
 
 def get_args():
     argparser = get_argparser()
-    # Data
-    argparser.add_argument('--max-train-tokens', type=int)
-    # Optimization
-    argparser.add_argument('--eval-batches', type=int, default=200)
-    argparser.add_argument('--wait-epochs', type=int, default=5)
-    argparser.add_argument('--epochs', type=int, default=5)
     # Save
-    argparser.add_argument('--generator-path', type=str, required=True)
-    argparser.add_argument('--adaptor-results-file', type=str, required=True)
+    argparser.add_argument('--results-file', type=str, required=True)
     # adaptor
     argparser.add_argument('--no-alphas', type=float, required=True)
     argparser.add_argument('--no-betas', type=int, required=True)
     argparser.add_argument('--beta-end', type=int)
-    argparser.add_argument('--adaptor-iterations', type=int, default=10)
-    argparser.add_argument('--adaptor-state-file', type=str, required=True)
-    argparser.add_argument('--load-adaptor-init-state', default=False, action='store_true')
+    argparser.add_argument('--adaptor-iterations', type=int, default=6)
+    argparser.add_argument('--two-stage-state-folder', type=str, required=True)
+    add_all_defaults(argparser)
     args = parse_args(argparser)
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
@@ -42,22 +36,24 @@ def construct_pitman_yor_tuning_results(model, alpha, beta, train_loss, dev_loss
 def tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas):
     # pylint: disable=too-many-locals
     best_loss = float('inf')
+    types_from_tokens = TypesFromTokensDataset(trainloader)
+    type_trainloader = get_data_loader(types_from_tokens, batch_size=64, shuffle=False)
     best_params = None
     tuning_results = construct_pitman_yor_tuning_result_headers()
     for alpha in alphas:
         for beta in betas:
             generator = load_generator(args.generator_path)
-            # initial_state = Adaptor.get_initial_state(alpha, beta, alphabet)
-            adaptor = Adaptor(alpha, beta, alphabet, args.two_stage_state_folder, save_state=False)
+            adaptor = Adaptor(alpha, beta, alphabet, '', save_state=False)
             dev_loss = \
-                train_two_stage_model(generator, adaptor, trainloader, devloader, alphabet, args)
+                train_two_stage_model(generator, adaptor, trainloader, devloader, \
+                                        alphabet, type_trainloader, args)
             print('Adaptor dev loss', dev_loss, 'with a =', alpha, ', b =', beta)
             if dev_loss < best_loss:
                 print('New best loss')
                 best_loss = dev_loss
                 best_params = (alpha, beta)
-                print('Saving adaptor state to', args.adaptor_state_file)
-                adaptor.save_fitted_state(args.best_adaptor_state_file)
+                print('Saving adaptor state to', args.two_stage_state_folder)
+                adaptor.save_fitted_state(args.two_stage_state_folder)
             train_loss = evaluate_adaptor(trainloader, generator, adaptor)
             tuning_results += \
                 construct_pitman_yor_tuning_results(generator, alpha, beta, train_loss, dev_loss)
@@ -70,8 +66,8 @@ def main():
     folds = [list(range(8)), [8], [9]]
 
     trainloader, devloader, alphabet = \
-        get_data_loaders_with_folds(args.dataset, args.data_file, folds,\
-                                    args.batch_size, max_train_tokens=args.max_train_tokens)
+        get_data_loaders_with_folds('tokens', args.data_file, folds, args.batch_size,\
+                                    max_train_tokens=args.max_train_tokens)
     print('Train size: %d Dev size %d' %
           (len(trainloader.dataset), len(devloader.dataset)))
 
@@ -85,8 +81,8 @@ def main():
     print('alphas:', alphas)
     print('betas:', betas)
     tuning_results = tune_alpha_and_beta(trainloader, devloader, alphabet, args, alphas, betas)
-    print('Writing tuning results to', args.adaptor_results_file)
-    util.write_csv(args.adaptor_results_file, tuning_results)
+    print('Writing tuning results to', args.results_file)
+    util.write_csv(args.results_file, tuning_results)
 
 if __name__ == '__main__':
     main()

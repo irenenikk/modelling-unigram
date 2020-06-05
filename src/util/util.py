@@ -3,6 +3,7 @@ import pathlib
 import io
 import csv
 import pickle
+from collections import defaultdict
 import numpy as np
 import torch
 
@@ -17,6 +18,10 @@ def write_csv(filename, results):
         writer = csv.writer(f, delimiter=',')
         writer.writerows(results)
 
+def overwrite_csv(filename, results):
+    with io.open(filename, 'w', encoding='utf8') as f:
+        writer = csv.writer(f, delimiter=',')
+        writer.writerows(results)
 
 def write_data(filename, embeddings):
     with open(filename, "wb") as f:
@@ -78,3 +83,6 @@ def hacked_exp(x):
     maxim = x.max()
     y = np.exp(x - maxim)
     return y / y.sum()
+
+def create_int_defaultdict():
+    return defaultdict(int)

@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 sys.path.append('./src/')
 from h01_data.alphabet import Alphabet
-from util.argparser import get_argparser, parse_args
+from util.argparser import get_argparser, parse_args, add_data_args
 from util import util
 
 
@@ -20,6 +20,7 @@ def get_args():
     argparser.add_argument(
         "--max-sentences", type=int, default=4000,
         help="Maximum number of sentences used")
+    add_data_args(argparser)
     return parse_args(argparser)
 
 
@@ -46,6 +47,7 @@ def process_line(line, word_info, alphabet):
         # exclude words that contain non-letters
         if not word.isalpha():
             continue
+        word = word.lower()
         alphabet.add_word(word)
 
         if word in word_info:

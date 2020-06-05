@@ -5,7 +5,7 @@ sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.model import LstmLM
 from h02_learn.train_generator import evaluate
-from util.argparser import get_argparser, parse_args
+from util.argparser import get_argparser, parse_args, add_data_args
 from util import util
 from util import constants
 
@@ -16,7 +16,7 @@ def get_args():
     argparser.add_argument('--eval-path', type=str, required=True)
     # Save
     argparser.add_argument('--results-file', type=str, required=True)
-
+    add_data_args(argparser)
     return parse_args(argparser)
 
 
@@ -67,7 +67,7 @@ def main():
               (dataset, len(trainloader.dataset), len(devloader.dataset), len(testloader.dataset)))
 
     results = eval_all(model_paths, dataloaders)
-    util.write_csv(args.results_file, results)
+    util.overwrite_csv(args.results_file, results)
 
 
 if __name__ == '__main__':

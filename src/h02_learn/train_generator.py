@@ -7,20 +7,15 @@ sys.path.append('./src/')
 from h02_learn.dataset import get_data_loaders_with_folds
 from h02_learn.model import LstmLM
 from h02_learn.train_info import TrainInfo
-from util.argparser import get_argparser, parse_args
+from util.argparser import get_argparser, parse_args, add_all_defaults
 from util import util
 from util import constants
 
 
 def get_args():
     argparser = get_argparser()
-    # Optimization
-    argparser.add_argument('--eval-batches', type=int, default=200)
-    argparser.add_argument('--wait-epochs', type=int, default=5)
-    # Save
-    argparser.add_argument('--generator-path', type=str)
-    argparser.add_argument('--max-train-tokens', type=int)
 
+    add_all_defaults(argparser)
     args = parse_args(argparser)
     args.wait_iterations = args.wait_epochs * args.eval_batches
     return args
@@ -52,7 +47,7 @@ def train(trainloader, devloader, model, eval_batches, wait_iterations):
     train_info = TrainInfo(wait_iterations, eval_batches)
 
     while not train_info.finish:
-        for x, y, _, _ in trainloader:
+        for x, y, _, _, _ in trainloader:
             loss = train_batch(x, y, model, optimizer)
             train_info.new_batch(loss)
 
@@ -72,7 +67,7 @@ def train(trainloader, devloader, model, eval_batches, wait_iterations):
 
 def _evaluate(evalloader, model):
     dev_loss, n_instances = 0, 0
-    for x, y, weights, _ in evalloader:
+    for x, y, weights, _, _ in evalloader:
         y_hat = model(x)
         loss = model.get_loss(y_hat, y).sum(-1)
         dev_loss += (loss * weights).sum()

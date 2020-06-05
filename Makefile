@@ -3,6 +3,10 @@ ALPHA := 0.5
 BETA := 1
 MAX_TRAIN_TOKENS := 700000
 DATA_DIR_BASE := ./data
+# used in hyperparameter tuning
+NO_BETAS = 10
+NO_ALPHAS = 10
+EPOCHS = 5
 DATA_DIR_LANG := $(DATA_DIR_BASE)/$(LANGUAGE)
 WIKI_DIR := $(DATA_DIR_LANG)/wiki
 CHECKPOINT_DIR_BASE := ./checkpoint
@@ -40,16 +44,16 @@ TWO_STAGE_INIT_TYPE_ON_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluati
 TWO_STAGE_INIT_TOKEN_ON_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluation_init_token_on_type.csv
 
 
-all: get_wiki train_generator train_two_stage eval_generator
+all: get_wiki train_generator train_two_stage eval_generator eval_two_stage
 
 train_two_stage: run_two_stage_type_training run_two_stage_token_training
 	echo "Finished training two-stage model" $(LANGUAGE)
 
 eval_generator: $(GENERATOR_RESULTS_FILE)
-	echo "Finished evaluating model" $(LANGUAGE)
+	echo "Finished evaluating generator" $(LANGUAGE)
 
 eval_two_stage: run_two_stage_token_evaluation run_two_stage_type_evaluation
-	echo "Finished evaluating model" $(LANGUAGE)
+	echo "Finished evaluating two-stage model" $(LANGUAGE)
 
 train_generator: $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
 	echo "Finished training model" $(LANGUAGE)
@@ -60,40 +64,47 @@ get_wiki: $(PROCESSED_DATA_FILE)
 clean:
 	rm $(PROCESSED_DATA_FILE)
 
+tune_hyperparams: tune_hyperparameters
+	echo "Finished hyperparameter tuning for" $(LANGUAGE)
+
 
 # Eval two-stage model
 run_two_stage_type_evaluation: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
 	echo "Eval models on types" $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
 	echo "Evaluate two-stage model initialised with a type generator"
-	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --adaptor-results-file $(TWO_STAGE_INIT_TYPE_ON_TYPE_RESULTS_FILE) --batch-size 64 --dataset types
+	python3 src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER)\
+			--adaptor-results-file $(TWO_STAGE_INIT_TYPE_ON_TYPE_RESULTS_FILE) --batch-size 64 --dataset types
 	echo "Evaluate two-stage model initialised with a token generator"
-	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --adaptor-results-file $(TWO_STAGE_INIT_TOKEN_ON_TYPE_RESULTS_FILE) --batch-size 64 --dataset types
+	python3 src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER)\
+			--adaptor-results-file $(TWO_STAGE_INIT_TOKEN_ON_TYPE_RESULTS_FILE) --batch-size 64 --dataset types
 
 # Eval two-stage model
 run_two_stage_token_evaluation: $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
 	echo "Eval models on tokens" $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE)
 	mkdir -p $(RESULTS_DIR_LANG)
 	echo "Evaluate two-stage model initialised with a type generator"
-	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --adaptor-results-file $(TWO_STAGE_INIT_TYPE_ON_TOKEN_RESULTS_FILE) --batch-size 64 --dataset tokens
+	python3 src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER)\
+			--adaptor-results-file $(TWO_STAGE_INIT_TYPE_ON_TOKEN_RESULTS_FILE) --batch-size 64 --dataset tokens
 	echo "Evaluate two-stage model initialised with a token generator"
-	python src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --adaptor-results-file $(TWO_STAGE_INIT_TOKEN_ON_TOKEN_RESULTS_FILE) --batch-size 64 --dataset tokens
+	python3 src/h03_eval/eval_two_stage.py --data-file $(PROCESSED_DATA_FILE) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER)\
+			--adaptor-results-file $(TWO_STAGE_INIT_TOKEN_ON_TOKEN_RESULTS_FILE) --batch-size 64 --dataset tokens
 
 # Train two-stage model initialising with types
 run_two_stage_type_training: $(CHECKPOINT_TYPE_FILE)
 	echo "Train two-stage model" $(CHECKPOINT_TYPE_FILE)
 	mkdir -p $(TWO_STAGE_INIT_TYPE_STATE_FOLDER)
 	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h02_learn/train_two_stage.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --dataset tokens \
-			--adaptor-results-file $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --max-train-tokens $(MAX_TRAIN_TOKENS)
+	python src/h02_learn/train_two_stage.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TYPE_PATH) --adaptor-results-file $(TWO_STAGE_TYPE_TRAINING_RESULTS_FILE) \
+			--alpha $(ALPHA) --beta $(BETA) --two-stage-state-folder $(TWO_STAGE_INIT_TYPE_STATE_FOLDER) --max-train-tokens $(MAX_TRAIN_TOKENS) --epochs $(EPOCHS)
 
 # Train two-stage model initialising with tokens
 run_two_stage_token_training: $(CHECKPOINT_TOKEN_FILE)
 	echo "Train two-stage model" $(CHECKPOINT_TOKEN_FILE)
 	mkdir -p $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER)
 	mkdir -p $(RESULTS_DIR_LANG)
-	python src/h02_learn/train_two_stage.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --dataset tokens \
-			--adaptor-results-file $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) --alpha $(ALPHA) --beta $(BETA) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --max-train-tokens $(MAX_TRAIN_TOKENS)
+	python src/h02_learn/train_two_stage.py --data-file $(PROCESSED_DATA_FILE) --generator-path $(CHECKPOINT_TOKEN_PATH) --adaptor-results-file $(TWO_STAGE_TOKEN_TRAINING_RESULTS_FILE) \
+			--alpha $(ALPHA) --beta $(BETA) --two-stage-state-folder $(TWO_STAGE_INIT_TOKEN_STATE_FOLDER) --max-train-tokens $(MAX_TRAIN_TOKENS) --epochs $(EPOCHS)
 
 # Eval language models
 $(GENERATOR_RESULTS_FILE): $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
@@ -133,3 +144,9 @@ $(XML_FILE):
 	echo "Get wiki data"
 	mkdir -p $(WIKI_DIR)
 	wget -P $(WIKI_DIR) $(WIKIURL)
+
+tune_hyperparameters: $(PROCESSED_DATA_FILE) $(CHECKPOINT_TYPE_FILE)
+	mkdir -p $(CHECKPOINT_DIR_LANG)/hyperparam_tuning
+	mkdir -p $(RESULTS_DIR_LANG)
+	python src/h02_learn/tune_pitman_yor.py --results-file $(RESULTS_DIR_LANG)/hyperparam_tuning_results --no-alphas $(NO_ALPHAS) --no-betas $(NO_BETAS)\
+			--two-stage-state-folder $(CHECKPOINT_DIR_LANG)/hyperparam_tuning --data-file $(PROCESSED_DATA_FILE) --max-train-tokens $(MAX_TRAIN_TOKENS) --generator-path $(CHECKPOINT_TYPE_PATH)
