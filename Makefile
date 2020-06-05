@@ -46,7 +46,7 @@ TWO_STAGE_INIT_TYPE_ON_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluati
 TWO_STAGE_INIT_TOKEN_ON_TYPE_RESULTS_FILE := $(RESULTS_DIR_LANG)/adaptor_evaluation_init_token_on_type.csv
 
 
-all: get_wiki train_generator train_two_stage eval_generator eval_two_stage calculate_average_sentence_length
+all: get_wiki train_generator train_two_stage eval_generator eval_two_stage calculate_surprisal calculate_average_sentence_length
 
 train_two_stage: run_two_stage_type_training run_two_stage_token_training
 	echo "Finished training two-stage model" $(LANGUAGE)
