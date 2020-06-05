@@ -8,6 +8,7 @@ sys.path.append('./src/')
 from h02_learn.dataset import load_data
 from h02_learn.dataset.tokens import TokenDataset
 from util.argparser import get_argparser, parse_args
+from util import util
 
 def calculate_word_freqs(dataset):
     fold_freqs = dataset.word_freqs
@@ -49,9 +50,7 @@ def get_args():
 
 def main():
     args = get_args()
-    sns.set_palette("muted")
-    sns.set_context("notebook", font_scale=1.6)
-    plt.rc('font', family='serif', serif='Times New Roman')
+    util.define_plot_style(sns, plt)
     langs = ['fi', 'yo', 'he', 'id', 'en', 'ta', 'tr']
     for lang in langs:
         print('Getting data for', lang)

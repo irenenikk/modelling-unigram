@@ -59,7 +59,8 @@ def train_adaptor(adaptor, generator, types_logprobs, trainloader, devloader, ad
     adaptor.set_state(best_state)
     return best_tables_with_word_labels, min_dev_loss
 
-def train_generator(generator, tables_with_word_labels, token_devloader, args, alphabet, save_state=True):
+def train_generator(generator, tables_with_word_labels, token_devloader,\
+                    args, alphabet, save_state=True):
     generator.train()
     tables_with_word_labels_dataset = TableLabelDataset(tables_with_word_labels, alphabet)
     table_label_dataloader = get_data_loader(tables_with_word_labels_dataset,\

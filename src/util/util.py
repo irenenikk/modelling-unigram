@@ -92,3 +92,8 @@ def permute_dict(dictionary):
     values = list(dictionary.values())
     permuted_values = np.random.permutation(values)
     return dict(zip(keys, permuted_values))
+
+def define_plot_style(sns, plt):
+    sns.set_palette("muted")
+    sns.set_context("notebook", font_scale=1.6)
+    plt.rc('font', family='serif', serif='Times New Roman')

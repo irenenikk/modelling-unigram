@@ -1,5 +1,4 @@
 import sys
-from collections import defaultdict
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
@@ -7,6 +6,7 @@ import numpy as np
 
 sys.path.append('./src/')
 from util.argparser import get_argparser, parse_args
+from util import util
 
 def get_args():
     argparser = get_argparser()
@@ -26,48 +26,9 @@ def get_average_per_freq_rolling(data, model):
 def get_average_per_freq(data, model):
     return data[[model, 'freq']].groupby('freq').mean()
 
-def plot_average_entropy_sns(data, scatter):
-    x_bins = 500
-    ci = 90
-    sns.regplot("freq", "type", data, logx=True, label='Type model', scatter=scatter, x_bins=x_bins, ci=ci)
-    sns.regplot("freq", "token", data, logx=True, label='Token model', scatter=scatter, x_bins=x_bins, ci=ci)
-    sns.regplot("freq", "two_stage", data, logx=True, label='Two-stage model', scatter=scatter, x_bins=x_bins, ci=ci)
-    sns.regplot("freq", "generator", data, logx=True, label='Generator', scatter=scatter, x_bins=x_bins, ci=ci)
-    plt.xscale('log')
-    plt.xlabel('Word freq')
-    plt.ylabel('Word neg logprob')
-    plt.legend()
-    plt.show()
-
-def plot_average_entropy_sns_lm(data, scatter):
-    # data wrangling 
-    wrangled = defaultdict(list)
-    for i, row in data.iterrows():
-        for model in ['type', 'token', 'two_stage', 'generator']:
-            model_entropy = row[model]
-            wrangled['entropy'].append(model_entropy)
-            wrangled['model'].append(model)
-            wrangled['freq'].append(row['freq'])
-    wrangled_data = pd.DataFrame.from_dict(wrangled)
-    sns.lmplot('freq', 'entropy', wrangled_data, logx=True, hue='model', x_bins=500, scatter=scatter)
-    plt.xscale('log')
-    plt.xlabel('Word freq')
-    plt.ylim(0, 20)
-    #plt.ylabel('Word neg logprob')
-    #plt.legend()
-    plt.show()
-
-def plot_original_data(sorted_data, x_axis_val):
-    plt.plot(sorted_data[x_axis_val], sorted_data['type'], label='Type model')
-    plt.plot(sorted_data[x_axis_val], sorted_data['token'], label='Token model')
-    plt.plot(sorted_data[x_axis_val], sorted_data['two_stage'], label='Two-stage model')
-    plt.plot(sorted_data[x_axis_val], sorted_data['generator'], label='Generator')
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.xlabel('Word ' + x_axis_val)
-    plt.ylabel('Word surprisal (nats)')
-    plt.legend()
-    plt.show()
+def plot_scatter(x_values, sorted_data, column, color, jitter_lim=0.1, size=0.1):
+    jittered = x_values + np.random.uniform(-jitter_lim, jitter_lim, len(x_values))
+    plt.scatter(jittered, sorted_data[column], s=size, c=color)
 
 def plot_data(x_axis, sorted_data, transform, x_label, scatter=True):
     type_color = 'b'
@@ -75,18 +36,20 @@ def plot_data(x_axis, sorted_data, transform, x_label, scatter=True):
     two_stage_color = 'r'
     generator_color = '#D68910'
     if scatter:
-        size = 0.1
         x_values = sorted_data['freq']+3
-        jitter_lim = 0.1
-        plt.scatter(x_values + np.random.uniform(-jitter_lim, jitter_lim, len(x_values)), sorted_data['type'], s=size, c=type_color)
-        plt.scatter(x_values + np.random.uniform(-jitter_lim, jitter_lim, len(x_values)), sorted_data['token'], s=size, c=token_color)
-        plt.scatter(x_values + np.random.uniform(-jitter_lim, jitter_lim, len(x_values)), sorted_data['generator'], s=size, c=generator_color)
-        plt.scatter(x_values + np.random.uniform(-jitter_lim, jitter_lim, len(x_values)), sorted_data['two_stage'], s=size, c=two_stage_color)
+        plot_scatter(x_values, sorted_data, 'type', type_color)
+        plot_scatter(x_values, sorted_data, 'token', token_color)
+        plot_scatter(x_values, sorted_data, 'generator', generator_color)
+        plot_scatter(x_values, sorted_data, 'two_stage', two_stage_color)
         plt.ylim(4, 25)
-    plt.plot(x_axis, transform(sorted_data, 'type'), label='Type model', c=type_color)
-    plt.plot(x_axis, transform(sorted_data, 'token'), label='Token model', c=token_color)
-    plt.plot(x_axis, transform(sorted_data, 'generator'), label='Generator', c=generator_color)
-    plt.plot(x_axis, transform(sorted_data, 'two_stage'), label='Two-stage model', c=two_stage_color)
+    plt.plot(x_axis, transform(sorted_data, 'type'),
+             label='Type model', c=type_color)
+    plt.plot(x_axis, transform(sorted_data, 'token'),
+             label='Token model', c=token_color)
+    plt.plot(x_axis, transform(sorted_data, 'generator'),
+             label='Generator', c=generator_color)
+    plt.plot(x_axis, transform(sorted_data, 'two_stage'),
+             label='Two-stage model', c=two_stage_color)
     plt.xscale('log')
     plt.tight_layout()
     plt.xlabel(x_label)
@@ -99,7 +62,7 @@ def compare_type_and_generator(data):
     data['type_minus_gen'] = data['type'] - data['generator']
     gen_best = data.sort_values(by=['type_minus_gen'], ascending=False)
     gen_better = gen_best[gen_best['type_minus_gen'] > 0]
-    gen_better_singletons = gen_best[gen_best['freq'] == 1]
+    gen_better_singletons = gen_better[gen_better['freq'] == 1]
     print(gen_better_singletons[:10][['word', 'freq', 'type', 'generator']])
 
     type_better = gen_best[gen_best['type_minus_gen'] < 0]
@@ -107,9 +70,9 @@ def compare_type_and_generator(data):
     print(type_better_singletons[-10:][['word', 'freq', 'type', 'generator']])
 
 
-def top_k_average_entropies(freq_sorted, models, k=10000):
-    print('Top', k, 'average')
-    top_freq = freq_sorted[-k:]
+def top_k_average_entropies(freq_sorted, models, top_k=10000):
+    print('Top', top_k, 'average')
+    top_freq = freq_sorted[-top_k:]
     for model in models:
         avg = top_freq[model].mean()
         print(model, 'average', avg)
@@ -132,17 +95,16 @@ def non_singleton_average_entropies(data, models):
 
 def main():
     args = get_args()
-    sns.set_palette("muted")
-    sns.set_context("notebook", font_scale=1.6)    
-    plt.rc('font', family='serif', serif='Times New Roman')
-    
+    util.define_plot_style(sns, plt)
+
     data = pd.read_csv(args.data_file)
     data['rank'] += 1
-    rank_sorted = data.sort_values(by=['rank'])
     freq_sorted = data.sort_values(by=['freq'])
 
-    #plot_data(rank_sorted['rank']/2, rank_sorted, get_cumulative_average, 'Word rank', scatter=False)
-    #plot_data(freq_sorted['freq'].unique(), freq_sorted, get_average_per_freq, 'Word frequency', scatter=False)
+    #plot_data(rank_sorted['rank']/2, rank_sorted, get_cumulative_average,\
+    #          'Word rank', scatter=False)
+    #plot_data(freq_sorted['freq'].unique(), freq_sorted, get_average_per_freq,\
+    #          'Word frequency', scatter=False)
 
     print('test types', len(data))
     print('generator mean', data['generator'].mean())
@@ -152,7 +114,7 @@ def main():
     print('---------------------------------')
 
     models = ['type', 'token', 'two_stage', 'generator']
-    top_k_average_entropies(freq_sorted, models, k=10000)
+    top_k_average_entropies(freq_sorted, models, top_k=10000)
     print('---------------------------------')
     singleton_average_entropies(data, models)
     print('---------------------------------')
