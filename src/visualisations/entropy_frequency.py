@@ -1,7 +1,5 @@
 import os
 import sys
-import matplotlib.pyplot as plt
-import seaborn as sns
 from tqdm import tqdm
 
 sys.path.append('./src/')
@@ -27,13 +25,14 @@ def get_args():
 
 
 def get_model(model_name, args):
-    model_path = os.path.join(args.checkpoint_language_dir, model_name + '_' + str(args.max_train_tokens))
+    model_path = os.path.join(args.checkpoint_language_dir,
+                              model_name + '_' + str(args.max_train_tokens))
     model = load_model(model_path)
     model.eval()
     return model
 
 
-def get_lm_loss(model, x, y, args):
+def get_lm_loss(model, x, y):
     y_hat = model(x)
     loss = model.get_loss(y_hat, y).sum(-1)
     return loss.item()
@@ -44,50 +43,56 @@ def get_two_stage_loss(adaptor, generator, x, y, word):
     two_stage_logprob = adaptor.get_token_logprobability(generator_logprob, word)
     return -two_stage_logprob.item()
 
+def two_stage_model_name(args):
+    return 'two_stage_init_type_' + args.alpha.replace('.', '_') + 
+           '_' + args.beta + '_' + str(args.max_train_tokens)
+
+def get_word_freqs_and_ranks(data_file, folds):
+    _, _, token_testloader, _ = get_data_loaders_with_folds(
+        'tokens', data_file, folds,
+        batch_size=1, test=True)
+    word_freqs = calculate_word_freqs(token_testloader.dataset)
+    word_ranks = get_word_ranks(token_testloader.dataset)
+    return word_freqs, word_ranks
 
 def main():
     args = get_args()
     folds = [list(range(8)), [8], [9]]
-    
+
     data_file = os.path.join(args.data_language_dir, 'processed.pckl')
 
     _, _, type_testloader, _ = get_data_loaders_with_folds(
         'types', data_file, folds,
         batch_size=1, test=True)
-    _, _, token_testloader, _ = get_data_loaders_with_folds(
-        'tokens', data_file, folds,
-        batch_size=1, test=True)
 
-    two_stage_state_folder = os.path.join(args.checkpoint_language_dir, 'two_stage_init_type_' +
-                                         args.alpha.replace('.', '_') + '_' + args.beta + '_' + str(args.max_train_tokens))
+    word_freqs, word_ranks = get_word_freqs_and_ranks(data_file, folds)
+
+    two_stage_state_folder = os.path.join(args.checkpoint_language_dir, two_stage_model_name(args))
     generator = load_generator(two_stage_state_folder)
     generator.eval()
     adaptor = Adaptor.load(two_stage_state_folder)
-
-    word_freqs = calculate_word_freqs(token_testloader.dataset)
-    word_ranks = get_word_ranks(token_testloader.dataset)
 
     token_model = get_model('tokens', args)
     type_model = get_model('types', args)
 
     results = [['word', 'type', 'token', 'two_stage', 'generator', 'freq', 'rank']]
-    for x, y, _, _, word_batch in tqdm(type_testloader, desc='Calculating type entropies', total=len(type_testloader.dataset)):
+    for x, y, _, _, word_batch in tqdm(type_testloader, desc='Calculating type entropies',
+                                       total=len(type_testloader.dataset)):
         word = word_batch[0]
-        type_loss = get_lm_loss(type_model, x, y, args)
-        token_loss = get_lm_loss(token_model, x, y, args)
-        generator_loss = get_lm_loss(generator, x, y, args)
+        type_loss = get_lm_loss(type_model, x, y)
+        token_loss = get_lm_loss(token_model, x, y)
+        generator_loss = get_lm_loss(generator, x, y)
         two_stage_loss = get_two_stage_loss(adaptor, generator, x, y, word)
         freq = word_freqs[word]
         rank = word_ranks[word]
         results += [[word, type_loss, token_loss, two_stage_loss, generator_loss, freq, rank]]
 
-    overall_type  = evaluate(type_testloader, type_model)
-    overall_token  = evaluate(type_testloader, token_model)
+    overall_type = evaluate(type_testloader, type_model)
+    overall_token = evaluate(type_testloader, token_model)
 
     print('Overall type loss', overall_type)
     print('Overall token loss', overall_token)
 
-    lang = args.data_language_dir.split('/')[-1]
     results_file = os.path.join(args.results_folder, 'entropy_freq.csv')
     util.overwrite_csv(results_file, results)
 

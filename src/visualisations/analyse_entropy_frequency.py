@@ -20,8 +20,11 @@ def get_cumulative_average(data, model):
 def get_window_average(data, model):
     return data[model].rolling(1000).mean().dropna()
 
-def get_average_per_freq(data, model):
+def get_average_per_freq_rolling(data, model):
     return data[[model, 'freq']].groupby('freq').mean().rolling(6).mean()
+
+def get_average_per_freq(data, model):
+    return data[[model, 'freq']].groupby('freq').mean()
 
 def plot_average_entropy_sns(data, scatter):
     x_bins = 500
@@ -79,6 +82,7 @@ def plot_data(x_axis, sorted_data, transform, x_label, scatter=True):
         plt.scatter(x_values + np.random.uniform(-jitter_lim, jitter_lim, len(x_values)), sorted_data['token'], s=size, c=token_color)
         plt.scatter(x_values + np.random.uniform(-jitter_lim, jitter_lim, len(x_values)), sorted_data['generator'], s=size, c=generator_color)
         plt.scatter(x_values + np.random.uniform(-jitter_lim, jitter_lim, len(x_values)), sorted_data['two_stage'], s=size, c=two_stage_color)
+        plt.ylim(4, 25)
     plt.plot(x_axis, transform(sorted_data, 'type'), label='Type model', c=type_color)
     plt.plot(x_axis, transform(sorted_data, 'token'), label='Token model', c=token_color)
     plt.plot(x_axis, transform(sorted_data, 'generator'), label='Generator', c=generator_color)
@@ -87,22 +91,44 @@ def plot_data(x_axis, sorted_data, transform, x_label, scatter=True):
     plt.tight_layout()
     plt.xlabel(x_label)
     plt.ylabel('Word surprisal (nats)')
-    #plt.ylim(4, 25)
     plt.legend()
     plt.show()
 
 def compare_type_and_generator(data):
     print('Singletons with the biggest diff between gen and type')
-    data['type_minus_gen'] = data['type'] - data['generator'
+    data['type_minus_gen'] = data['type'] - data['generator']
     gen_best = data.sort_values(by=['type_minus_gen'], ascending=False)
     gen_better = gen_best[gen_best['type_minus_gen'] > 0]
     gen_better_singletons = gen_best[gen_best['freq'] == 1]
-    print(gen_better_singletons[:10][['word', 'freq', 'type', 'generator'])
+    print(gen_better_singletons[:10][['word', 'freq', 'type', 'generator']])
 
     type_better = gen_best[gen_best['type_minus_gen'] < 0]
     type_better_singletons = type_better[type_better['freq'] == 1]
     print(type_better_singletons[-10:][['word', 'freq', 'type', 'generator']])
 
+
+def top_k_average_entropies(freq_sorted, models, k=10000):
+    print('Top', k, 'average')
+    top_freq = freq_sorted[-k:]
+    for model in models:
+        avg = top_freq[model].mean()
+        print(model, 'average', avg)
+
+def singleton_average_entropies(data, models):
+    print('Singletons')
+    singletons = data[data['freq'] == 1]
+    print('Singleton percentage', len(singletons)/len(data))
+    for model in models:
+        avg = singletons[model].mean()
+        print(model, 'average', avg)
+
+def non_singleton_average_entropies(data, models):
+    print('Non-singletons')
+    non_singletons = data[data['freq'] > 1]
+    print('Non singleton percentage', len(non_singletons)/len(data))
+    for model in models:
+        avg = non_singletons[model].mean()
+        print(model, 'average', avg)
 
 def main():
     args = get_args()
@@ -116,19 +142,21 @@ def main():
     freq_sorted = data.sort_values(by=['freq'])
 
     #plot_data(rank_sorted['rank']/2, rank_sorted, get_cumulative_average, 'Word rank', scatter=False)
-    #plot_data(rank_sorted['rank'].iloc[999:] - 500, rank_sorted, get_window_average, 'Word rank', scatter=False)
-    plot_data(freq_sorted['freq'].unique()-3, freq_sorted, get_average_per_freq, 'Word frequency', scatter=False)
-    plot_data(freq_sorted['freq'].unique(), freq_sorted, get_average_per_freq2, 'Word frequency', scatter=False)
-    #plot_original_data(sorted_data, x_axis_val)
-    #plot_average_entropy_sns(data, True)
-    #plot_average_entropy_sns_lm(data, False)
-    #plot_average_entropy_sns(data, False)
+    #plot_data(freq_sorted['freq'].unique(), freq_sorted, get_average_per_freq, 'Word frequency', scatter=False)
 
     print('test types', len(data))
     print('generator mean', data['generator'].mean())
     print('token mean', data['token'].mean())
     print('type mean', data['type'].mean())
     print('two-stage mean', data['two_stage'].mean())
+    print('---------------------------------')
+
+    models = ['type', 'token', 'two_stage', 'generator']
+    top_k_average_entropies(freq_sorted, models, k=10000)
+    print('---------------------------------')
+    singleton_average_entropies(data, models)
+    print('---------------------------------')
+    non_singleton_average_entropies(data, models)
 
 if __name__ == '__main__':
     main()

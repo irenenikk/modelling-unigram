@@ -7,18 +7,18 @@ import seaborn as sns
 sys.path.append('./src/')
 from h02_learn.dataset import load_data
 from h02_learn.dataset.tokens import TokenDataset
-from util.argparser import get_argparser, parse_args, add_data_args
+from util.argparser import get_argparser, parse_args
 
 def calculate_word_freqs(dataset):
     fold_freqs = dataset.word_freqs
     word_freqs = defaultdict(int)
-    for w, f in fold_freqs:
-        word_freqs[w] += f
-    return word_freqs    
+    for word, f in fold_freqs:
+        word_freqs[word] += f
+    return word_freqs
 
 def get_sorted_freqs(dataset):
     word_freqs = calculate_word_freqs(dataset)
-    sorted_freqs = sorted(word_freqs.items(), key=lambda x: -x[1])    
+    sorted_freqs = sorted(word_freqs.items(), key=lambda x: -x[1])
     return sorted_freqs
 
 def get_ranks(sorted_freqs):
