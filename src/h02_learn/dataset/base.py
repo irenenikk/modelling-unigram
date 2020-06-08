@@ -17,7 +17,7 @@ class BaseDataset(Dataset, ABC):
         self._train = True
 
     def get_folds_data(self, data):
-        folds_data, alphabet, _ = data
+        folds_data, _, alphabet, _ = data
         self.alphabet = alphabet
         word_freqs = [(word, info['count'])
                       for fold in self.folds

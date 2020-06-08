@@ -33,22 +33,28 @@ def get_model(alphabet, args):
         .to(device=constants.device)
 
 
-def train_batch(x, y, model, optimizer):
+def train_batch(x, y, model, optimizer, by_character=False):
     optimizer.zero_grad()
     y_hat = model(x)
-    loss = model.get_loss(y_hat, y).sum(-1).mean()
+    loss = model.get_loss(y_hat, y).sum(-1)
+    if by_character:
+        word_lengths = (y != 0).sum(-1)
+        loss = (loss / word_lengths).mean()
+    else:
+        loss = loss.mean()
     loss.backward()
     optimizer.step()
     return loss.item()
 
 
-def train(trainloader, devloader, model, eval_batches, wait_iterations):
+def train(trainloader, devloader, model, eval_batches, wait_iterations, dataset):
     optimizer = optim.AdamW(model.parameters())
     train_info = TrainInfo(wait_iterations, eval_batches)
 
     while not train_info.finish:
         for x, y, _, _, _ in trainloader:
-            loss = train_batch(x, y, model, optimizer)
+            loss_per_char = dataset == 'sentences'
+            loss = train_batch(x, y, model, optimizer, by_character=loss_per_char)
             train_info.new_batch(loss)
 
             if train_info.eval:
@@ -113,7 +119,7 @@ def main():
           (len(trainloader.dataset), len(devloader.dataset)))
 
     model = get_model(alphabet, args)
-    train(trainloader, devloader, model, args.eval_batches, args.wait_iterations)
+    train(trainloader, devloader, model, args.eval_batches, args.wait_iterations, args.dataset)
 
     train_loss = evaluate(trainloader, model)
     dev_loss = evaluate(devloader, model)

@@ -12,6 +12,7 @@ dependencies:
   - gensim
   - tqdm
   - matplotlib
+  - seaborn
   - pylint
   - pip
   - pip:
