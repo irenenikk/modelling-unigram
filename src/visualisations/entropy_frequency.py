@@ -48,8 +48,7 @@ def two_stage_model_name(args):
 
 def get_word_freqs_and_ranks(data_file, folds):
     _, _, token_testloader, _ = get_data_loaders_with_folds(
-        'tokens', data_file, folds,
-        batch_size=1, test=True)
+        'tokens', data_file, folds, batch_size=1)
     word_freqs = calculate_word_freqs(token_testloader.dataset)
     word_ranks = get_word_ranks(token_testloader.dataset)
     return word_freqs, word_ranks
@@ -84,8 +83,7 @@ def main():
     data_file = os.path.join(args.data_language_dir, 'processed.pckl')
 
     _, _, type_testloader, _ = get_data_loaders_with_folds(
-        'types', data_file, folds,
-        batch_size=1, test=True)
+        'types', data_file, folds, batch_size=1)
 
     word_freqs, word_ranks = get_word_freqs_and_ranks(data_file, folds)
 

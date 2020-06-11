@@ -181,7 +181,7 @@ def main():
     dev_sentences = sentence_data[folds[1][0]]
     test_sentences = sentence_data[folds[2][0]]
     _, dev_loader, test_loader, _ = get_data_loaders_with_folds('tokens', args.data_file, folds,\
-                                                             args.batch_size, test=True)
+                                                             args.batch_size)
 
     generator = load_generator(args.two_stage_state_folder)
     adaptor = Adaptor.load(args.two_stage_state_folder)

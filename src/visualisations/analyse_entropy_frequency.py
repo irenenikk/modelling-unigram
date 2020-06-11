@@ -57,17 +57,23 @@ def plot_data(x_axis, sorted_data, transform, x_label, scatter=True):
     plt.legend()
     plt.show()
 
-def compare_type_and_generator(data):
-    print('Singletons with the biggest diff between gen and type')
+def compare_type_and_generator(data, n_vals=10):
+    print('Comparing the generator and the type model')
     data['type_minus_gen'] = data['type'] - data['generator']
     gen_best = data.sort_values(by=['type_minus_gen'], ascending=False)
     gen_better = gen_best[gen_best['type_minus_gen'] > 0]
     gen_better_singletons = gen_better[gen_better['freq'] == 1]
-    print(gen_better_singletons[:10][['word', 'freq', 'type', 'generator']])
+    print('Generator is better')
+    print(gen_better[:n_vals][['word', 'freq', 'type', 'generator']])
+    print('With singletons')
+    print(gen_better_singletons[:n_vals][['word', 'freq', 'type', 'generator']])
 
     type_better = gen_best[gen_best['type_minus_gen'] < 0]
+    print('Type model is better')
+    print(type_better[-n_vals:][['word', 'freq', 'type', 'generator']])
+    print('With singletons')
     type_better_singletons = type_better[type_better['freq'] == 1]
-    print(type_better_singletons[-10:][['word', 'freq', 'type', 'generator']])
+    print(type_better_singletons[-n_vals:][['word', 'freq', 'type', 'generator']])
 
 
 def top_k_average_entropies(freq_sorted, models, top_k=10000):
@@ -112,6 +118,8 @@ def main():
     print('type mean', data['type'].mean())
     print('two-stage mean', data['two_stage'].mean())
     print('---------------------------------')
+
+    compare_type_and_generator(data, 20)
 
     models = ['type', 'token', 'two_stage', 'generator']
     top_k_average_entropies(freq_sorted, models, top_k=10000)

@@ -68,7 +68,7 @@ def main():
     args = get_args()
     folds = [list(range(8)), [8], [9]]
 
-    trainloader, devloader, alphabet = \
+    trainloader, devloader, _, alphabet = \
         get_data_loaders_with_folds('tokens', args.data_file, folds, args.batch_size,\
                                     max_train_tokens=args.max_train_tokens)
     print('Train size: %d Dev size %d' %

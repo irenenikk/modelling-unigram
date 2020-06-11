@@ -138,7 +138,7 @@ def main():
     args = get_args()
     folds = [list(range(8)), [8], [9]]
 
-    token_trainloader, token_devloader, token_alphabet = \
+    token_trainloader, token_devloader, _, token_alphabet = \
         get_data_loaders_with_folds('tokens', args.data_file, folds,\
                                         args.batch_size, max_train_tokens=args.max_train_tokens)
 
