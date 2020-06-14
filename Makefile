@@ -57,7 +57,7 @@ eval_generator: evaluate_generator
 eval_two_stage: run_two_stage_token_evaluation run_two_stage_type_evaluation
 	echo "Finished evaluating two-stage model" $(LANGUAGE)
 
-train_generator: $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE) #$(CHECKPOINT_SENTENCES_FILE)
+train_generator: $(CHECKPOINT_TOKEN_FILE) $(CHECKPOINT_TYPE_FILE)
 	echo "Finished training model" $(LANGUAGE)
 
 get_wiki: $(PROCESSED_DATA_FILE)
