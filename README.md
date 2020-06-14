@@ -41,7 +41,7 @@ You can also run the components of the experiments individually:
 
 `train_two_stage`: Train the two stage model consisting of a generator and an adaptor. Requires `train_generator` to be finished. The two-stage model is initialised both with a generator trained on tokens and one trained on types.
 
-`eval_generator`: Evaluate the different initialisations of the generator language model.
+`eval_generator`: Evaluate the different initialisations of the generator language model. This will evaluate both the type and token models, as well as the retrained generators.
 
 `eval_two_stage`: Evaluate the different initialisations of the two-stage model.
 
@@ -52,6 +52,10 @@ You can also run the components of the experiments individually:
 `tune_hyperparams`: Tune the hyperparameters for a given language. You can specify the amount of parameters tested with `TUNING_ITERATIONS` (the default is 10).
 
 In evaluation the models are evaluated both using types and tokens.
+
+## Reading the results
+
+// TODO
 
 ## Contributing
 
