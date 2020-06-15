@@ -109,7 +109,7 @@ def save_checkpoints(model, train_loss, dev_loss, train_size, dev_size, checkpoi
 
 def main():
     args = get_args()
-    folds = [list(range(8)), [8], [9]]
+    folds = util.get_folds()
 
     trainloader, devloader, _, alphabet = get_data_loaders_with_folds(
         args.dataset, args.data_file, folds,

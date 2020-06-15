@@ -78,7 +78,7 @@ def type_token_sanity_check(type_testloader, type_model, token_model):
 
 def main():
     args = get_args()
-    folds = [list(range(8)), [8], [9]]
+    folds = util.get_folds()
 
     data_file = os.path.join(args.data_language_dir, 'processed.pckl')
 

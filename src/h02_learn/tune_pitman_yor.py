@@ -66,7 +66,7 @@ def tune_alpha_and_beta(trainloader, devloader, alphabet, args, iterations, beta
 def main():
     # pylint: disable=all
     args = get_args()
-    folds = [list(range(8)), [8], [9]]
+    folds = util.get_folds()
 
     trainloader, devloader, _, alphabet = \
         get_data_loaders_with_folds('tokens', args.data_file, folds, args.batch_size,\

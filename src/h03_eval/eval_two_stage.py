@@ -34,7 +34,7 @@ def save_pitman_yor_results(model, dataset, alpha, beta, train_loss,\
 def main():
     # pylint: disable=all
     args = get_args()
-    folds = [list(range(8)), [8], [9]]
+    folds = util.get_folds()
 
     trainloader, devloader, testloader, _ = \
         get_data_loaders_with_folds(args.dataset, args.data_file, folds, args.batch_size)

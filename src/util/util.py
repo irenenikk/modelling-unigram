@@ -7,6 +7,10 @@ from collections import defaultdict
 import numpy as np
 import torch
 
+def get_folds():
+    # define training set, development set and test set respectively
+    # folds range from 0 to 9
+    return [list(range(8)), [8], [9]]
 
 def config(seed):
     np.random.seed(seed)
