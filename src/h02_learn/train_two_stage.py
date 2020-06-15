@@ -136,7 +136,7 @@ def initiate_two_stage_training(token_trainloader, token_devloader, token_alphab
 
 def main():
     args = get_args()
-    folds = [list(range(8)), [8], [9]]
+    folds = util.get_folds()
 
     token_trainloader, token_devloader, _, token_alphabet = \
         get_data_loaders_with_folds('tokens', args.data_file, folds,\

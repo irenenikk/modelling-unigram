@@ -55,6 +55,10 @@ You can also run the components of the experiments individually:
 `tune_hyperparams`: Tune the hyperparameters for a given language. You can specify the amount of parameters tested with `TUNING_ITERATIONS` (the default is 10). The results are stored in a CSV file called `hyperparam_tuning_results`.
 
 In evaluation the models are evaluated both using types and tokens.
+
+The data is divided into ten folds, which are used to build the training, development and test datasets. You can change the training, development and test split used by changing the `get_folds` method in `util/util.py`.
+
+
 ## Contributing
 
 Please run `pylint src/ --rcfile .pylintrc` in the root folder to run the linter.

@@ -174,7 +174,7 @@ def run_experiments(sentences, generator, adaptor, alphabet, data_loader, args, 
 
 def main():
     args = get_args()
-    folds = [list(range(8)), [8], [9]]
+    folds = util.get_folds()
 
     data = load_data(args.data_file)
     _, sentence_data, alphabet, _ = data
