@@ -21,7 +21,7 @@ def get_window_average(data, model):
     return data[model].rolling(1000).mean().dropna()
 
 def get_average_per_freq_rolling(data, model):
-    return data[[model, 'freq']].groupby('freq').mean().rolling(6).mean()
+    return data[[model, 'freq']].groupby('freq').mean().rolling(6).mean() # remember to take the window size into account when plotting
 
 def get_average_per_freq(data, model):
     return data[[model, 'freq']].groupby('freq').mean()
@@ -35,13 +35,16 @@ def plot_data(x_axis, sorted_data, transform, x_label, scatter=True):
     token_color = 'g'
     two_stage_color = 'r'
     generator_color = '#D68910'
+    fig = plt.figure(figsize=(8,4))
     if scatter:
-        x_values = sorted_data['freq']+3
+        offset = 3 # this should be half the window size in case you use rolling average
+        x_values = sorted_data['freq']+offset
         plot_scatter(x_values, sorted_data, 'type', type_color)
         plot_scatter(x_values, sorted_data, 'token', token_color)
         plot_scatter(x_values, sorted_data, 'generator', generator_color)
         plot_scatter(x_values, sorted_data, 'two_stage', two_stage_color)
-        plt.ylim(4, 25)
+        plt.ylim(4, 20)
+        plt.xlim(offset, 1e4)
     plt.plot(x_axis, transform(sorted_data, 'type'),
              label='Type model', c=type_color)
     plt.plot(x_axis, transform(sorted_data, 'token'),
@@ -54,8 +57,9 @@ def plot_data(x_axis, sorted_data, transform, x_label, scatter=True):
     plt.tight_layout()
     plt.xlabel(x_label)
     plt.ylabel('Word surprisal (nats)')
-    plt.legend()
+    #plt.legend()
     plt.show()
+    fig.savefig('plot.png', bbox_inches='tight')
 
 def compare_type_and_generator(data, n_vals=10):
     print('Comparing the generator and the type model')
@@ -109,8 +113,8 @@ def main():
 
     #plot_data(rank_sorted['rank']/2, rank_sorted, get_cumulative_average,\
     #          'Word rank', scatter=False)
-    #plot_data(freq_sorted['freq'].unique(), freq_sorted, get_average_per_freq,\
-    #          'Word frequency', scatter=False)
+    plot_data(freq_sorted['freq'].unique(), freq_sorted, get_average_per_freq_rolling,\
+              'Word frequency')
 
     print('test types', len(data))
     print('generator mean', data['generator'].mean())
