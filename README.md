@@ -21,7 +21,7 @@ $ python -m spacy download xx_ent_wiki_sm
 
 The code includes a copy of [this Wikipedia tokenizer](https://github.com/tpimentelms/wiki-tokenizer) with the consent of the creator.
 
-## Running the code
+## Training and evaluating the models
 
 In order to run the full experiments pipeline for a given language, run
 
@@ -58,6 +58,13 @@ In evaluation the models are evaluated both using types and tokens.
 
 The data is divided into ten folds, which are used to build the training, development and test datasets. You can change the training, development and test split used by changing the `get_folds` method in `util/util.py`.
 
+## Visualisations
+
+The `visualisations` folder will contain code to visualise the performance of the trained models. 
+
+The script `entropy_frequency.py` creates a csv file with the surprisals for each type in the test dataset. The surprisals are calculated for the two-stage model, the generator and an LSTM trained on both types and tokens. The two-stage model to use is defined by the two-stage parameters given as arguments. This is done as part of the command `make all`.
+
+You can visualise the csv file created by the previous script with `analyse_entropy_frequency.py`. The script will also compare the performance of the type LSTM and the generator.
 
 ## Contributing
 
