@@ -13,6 +13,8 @@ To install dependencies run:
 $ conda env create -f environment.yml
 ```
 
+Note that your system also needs to have `wget` installed.
+
 And then install the appropriate version of pytorch:
 ```bash
 $ conda install pytorch torchvision cpuonly -c pytorch
